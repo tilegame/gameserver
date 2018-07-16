@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+type GameMessageKind int
+
 const (
 	Example GameMessageKind = iota
 	AddPlayer
@@ -13,7 +15,7 @@ const (
 
 type Game struct {
 	StartTime      time.Time
-	MessageChannel chan<- GameMessage
+	MessageChannel chan GameMessage
 	playerMap      map[int]Player
 }
 
@@ -22,13 +24,14 @@ type Game struct {
 // are adding, deleting, or moving players.
 type GameMessage struct {
 	Kind GameMessageKind
-	Data string
+	Data interface{}
 }
 
 func NewGame() *Game {
 	g := &Game{
-		StartTime: time.Now(),
-		playerMap: make(map[int]Player),
+		StartTime:      time.Now(),
+		playerMap:      make(map[int]Player),
+		MessageChannel: make(chan GameMessage),
 	}
 	go g.runGameMessageHub()
 	return g
@@ -39,30 +42,42 @@ func NewGame() *Game {
 // it only happens once for each game instance.
 func (g *Game) runGameMessageHub() {
 	select {
-	case r <- request:
-		g.handleRequest(r)
+	case m := <-g.MessageChannel:
+		g.handleGameMessage(m)
 	}
 }
 
 func (g *Game) handleGameMessage(m GameMessage) {
-	switch GameMessage.Kind {
+	switch m.Kind {
 	case Example:
 		log.Println("Example message received!")
+
 	case AddPlayer:
-		addPlayer(m.data)
+		id, ok := m.Data.(int)
+		if ok {
+			g.addPlayer(id)
+		} else {
+			log.Println("AddPlayerMessage: data needs to be integer")
+		}
+
 	case RemovePlayer:
-		delete(g.playerMap, m.data)
+		id, ok := m.Data.(int)
+		if ok {
+			delete(g.playerMap, id)
+		} else {
+			log.Println("AddPlayerMessage: data needs to be integer")
+		}
 	}
 }
 
 // addPlayer() is not safe for concurrent execution.  Returns false if
 // there is already a player by the given name.
-func (g *Game) addPlayer(s string) bool {
-	_, ok := m[s]
+func (g *Game) addPlayer(id int) bool {
+	_, ok := g.playerMap[id]
 	if !ok {
 		return false
 	}
-	g.playerMap[s] = Player{}
+	g.playerMap[id] = Player{}
 	return true
 }
 
