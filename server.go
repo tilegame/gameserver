@@ -28,11 +28,17 @@ INFORMATION:
 
  Serving Files
  -------------
-  Th
+  By default, a minimalist message is displayed when visiting the
+  homepage (or a non-existent page).  A fileserver can be enabled
+  by using the boolean flag
+    -serve-files
+  which will then serve "index.html" from the working directory
+  as the homepage.  This homepage can be changed by using the flag:
+    -index <filepath>
 
  Server Paths
  ------------
-      /     routes to files if the file server is enabled..
+      /     routes to files if the file server is enabled.
       /*    routes to any file in the directory and subdirectories.
       /ws   routes to the websocket connection.  Has no files.
 
