@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/fractalbach/ninjaServer.svg?branch=master)](https://travis-ci.org/fractalbach/ninjaServer)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fractalbach/ninjaServer)](https://goreportcard.com/report/github.com/fractalbach/ninjaServer)
+[![GoDoc](https://godoc.org/github.com/fractalbach/ninjaServer?status.svg)](https://godoc.org/github.com/fractalbach/ninjaServer)
 
 Repository of the back end for Ninja Arena
 https://thebachend.com 
