@@ -1,10 +1,10 @@
 package chatserver
 
-type client chan<-string
+type client chan<- string
 
 var (
 	entering = make(chan client)
-	leaving = make(chan client)
+	leaving  = make(chan client)
 	messages = make(chan string)
 	clientMap = make(map[client]bool)
 )

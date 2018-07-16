@@ -10,7 +10,7 @@ import (
 
 var (
 	upgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {return true},
+		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 )
 
@@ -29,7 +29,6 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			break
 		}
-		log.Printf("Received: %s \n", message)
 		message = bytes.ToUpper(message)
 		err = conn.WriteMessage(messageType, message)
 		if err != nil {
