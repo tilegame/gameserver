@@ -25,14 +25,19 @@ EXAMPLES:
   ninjaServer -a :http -tls
 
 INFORMATION:
-  Files will be served relative to the current directory,
-  which will become the root directory for all files.
 
-  Server Paths
-      /     routes to index.html
+ Serving Files
+ -------------
+  Th
+
+ Server Paths
+ ------------
+      /     routes to files if the file server is enabled..
       /*    routes to any file in the directory and subdirectories.
       /ws   routes to the websocket connection.  Has no files.
 
+ Input and Output
+ ----------------
   If the -io flag is used, then stdin and stdout will be enabled.
   Stdin will be scanned line by line (will wait for each line), so
   commands can be sent interactively.
@@ -43,8 +48,9 @@ OPTIONS:
 const (
 	HelpAddress    = "Host Address and Port for Standard connections."
 	HelpAddressTLS = "Host Address and Port for TLS connections."
-	HelpIndex      = "Homepage file"
+	HelpIndex      = "Homepage file. Only matters if file server is enabled."
 	HelpIO         = "Enable Stdin input and Stdout output."
+	HelpFiles      = "Enables the File Server"
 	DefaultAddress = "localhost:8080"
 	DefaultIndex   = "index.html"
 )
@@ -52,9 +58,15 @@ const (
 var (
 	useStdinStdout bool
 	usingTLS       bool
+	usingFiles     bool
 	addr           string
 	index          string
 )
+
+var endpoints = map[string]func(http.ResponseWriter, *http.Request){
+	"/ws":      serveWebSocket,
+	"/ws/echo": serveWebSocketEcho,
+}
 
 func init() {
 	flag.StringVar(&addr, "address", DefaultAddress, HelpAddress)
@@ -62,9 +74,19 @@ func init() {
 	flag.StringVar(&index, "index", DefaultIndex, HelpIndex)
 	flag.BoolVar(&useStdinStdout, "io", false, HelpIO)
 	flag.BoolVar(&usingTLS, "tls", false, HelpAddressTLS)
+	flag.BoolVar(&usingFiles, "serve-files", false, HelpFiles)
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, HelpMessage)
 		flag.PrintDefaults()
+	}
+
+	// waiting until initialization to add this handler allows
+	// the user to determine whether or not the program should run
+	// a file server, or just a minimialist webpage.
+	if usingFiles {
+		endpoints["/"] = serveFiles
+	} else {
+		endpoints["/"] = serveMinimal
 	}
 }
 
@@ -96,9 +118,9 @@ func handleStdinCommand(line string) {
 
 func runServer() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", serveHome)
-	mux.HandleFunc("/ws", serveWebSocket)
-	mux.HandleFunc("/ws/echo", serveWebSocketEcho)
+	for path, handler := range endpoints {
+		mux.HandleFunc(path, handler)
+	}
 	if !usingTLS {
 		s := &http.Server{Addr: addr, Handler: mux}
 		log.Fatal(s.ListenAndServe())
@@ -117,7 +139,7 @@ func runServer() {
 	log.Fatal(s.ListenAndServeTLS("", ""))
 }
 
-func serveHome(w http.ResponseWriter, r *http.Request) {
+func serveFiles(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(405), 405)
@@ -125,6 +147,12 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 	}
 	http.ServeFile(w, r, r.URL.Path[1:])
 	return
+}
+
+func serveMinimal(w http.ResponseWriter, r *http.Request) {
+	logRequest(r)
+	fmt.Fprintln(w, "You've reached The Bach End!")
+
 }
 
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
