@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	cookieName  = "yummy-cookie"
+	MainCookieName  = "yummy-cookie"
 	hashKeyLen  = 32 // can be 32 or 64 bytes
 	blockKeyLen = 16 // can be 16, 24, or 32 bytes.
 )
@@ -36,13 +36,13 @@ func SetCookieHandler(w http.ResponseWriter, r *http.Request) {
 		"id":         exampleID,
 		"examplekey": exampleKey,
 	}
-	encoded, err := s.Encode(cookieName, value)
+	encoded, err := s.Encode(MainCookieName, value)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	cookie := &http.Cookie{
-		Name:  cookieName,
+		Name:  MainCookieName,
 		Value: encoded,
 		Path:  "/",
 	}
@@ -50,13 +50,13 @@ func SetCookieHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReadCookieHandler(w http.ResponseWriter, r *http.Request) {
-	cookie, err1 := r.Cookie(cookieName)
+	cookie, err1 := r.Cookie(MainCookieName)
 	if err1 != nil {
 		log.Println(err1)
 		return
 	}
 	value := make(map[string]([]byte))
-	err2 := s.Decode(cookieName, cookie.Value, &value)
+	err2 := s.Decode(MainCookieName, cookie.Value, &value)
 	if err2 != nil {
 		log.Println(err2)
 		return
