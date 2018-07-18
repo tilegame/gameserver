@@ -24,6 +24,14 @@ URL | Description
 ----|-------------
 wss://thebachend.com/ws | Main websocket endpoint for the game
 wss://thebachend.com/ws/echo | The echo server, used for speed tests and other experiments
+https://thebachend.com/cookie | Cookie Handler; used for storing player ID and logins; a precursor to the login page.
+
+## Current Roadmap
+
+- [ ] sessions
+- [ ] simple login (no disk saves)
+- [ ] chat
+- [ ] character movement
 
 ## Websockets
 
