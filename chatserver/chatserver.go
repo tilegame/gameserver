@@ -9,6 +9,10 @@ var (
 	clientMap = make(map[client]bool)
 )
 
+func HandleChat() {
+	
+}
+
 func broadcaster() {
 	for {
 		select {
