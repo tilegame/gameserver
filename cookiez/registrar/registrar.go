@@ -26,6 +26,7 @@ func newRegistrar() *registrar {
 		queryChannel: make(chan query),
 		entering:     make(chan user),
 		leaving:      make(chan int),
+		userMap: make(map[int]([]byte)),
 	}
 }
 

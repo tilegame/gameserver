@@ -81,7 +81,7 @@ var (
 var endpoints = map[string]func(http.ResponseWriter, *http.Request){
 	"/ws":      serveWebSocket,
 	"/ws/echo": serveWebSocketEcho,
-	"/cookie":  ServeCookies,
+	"/cookie":  cookiez.ServeCookies,
 }
 
 var endpointDescriptions = map[string]string{
@@ -225,17 +225,4 @@ func serveWebSocketEcho(w http.ResponseWriter, r *http.Request) {
 
 func logRequest(r *http.Request) {
 	log.Printf("(%v) %v %v %v", r.RemoteAddr, r.Proto, r.Method, r.URL)
-}
-
-// ServeCookies is a handler wrapper that determines if the client already
-// has the main authentication cookie.  The http.ResponseWriter and http.Request
-// are handed off to the cookie handlers in package cookiez.  Either a new
-// cookie will be given, or an old cookie will be validated.
-func ServeCookies(w http.ResponseWriter, r *http.Request) {
-	_, err := r.Cookie(cookiez.MainCookieName)
-	if err != nil {
-		cookiez.SetCookieHandler(w, r)
-		return
-	}
-	cookiez.ReadCookieHandler(w, r)
 }
