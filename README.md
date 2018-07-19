@@ -28,7 +28,7 @@ https://thebachend.com/cookie | Cookie Handler; used for storing player ID and l
 
 ## Current Roadmap
 
-- [ ] sessions
+- [x] sessions
 - [ ] simple login (no disk saves)
 - [ ] chat
 - [ ] character movement
