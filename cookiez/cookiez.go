@@ -15,6 +15,7 @@ const (
 	hashKeyLen      = 32 // can be 32 or 64 bytes
 	blockKeyLen     = 16 // can be 16, 24, or 32 bytes.
 	SessionDuration = time.Minute * 1
+	MaxAgeSeconds   = 60
 )
 
 const loginString = `
@@ -43,15 +44,15 @@ var (
 )
 
 type userData struct {
-	ID    int
-	Token []byte
+	ID      int
+	Token   []byte
 	Expires time.Time
 }
 
 func newUserData() userData {
 	return userData{
-		ID:    nextID(),
-		Token: securecookie.GenerateRandomKey(32),
+		ID:      nextID(),
+		Token:   securecookie.GenerateRandomKey(32),
 		Expires: time.Now().Add(SessionDuration),
 	}
 }
@@ -113,8 +114,13 @@ func readCookieHandler(w http.ResponseWriter, r *http.Request) {
 		setCookieHandler(w, r)
 		return
 	}
-	timeLeft := value.Expires.Sub(time.Now())
-	fmt.Fprintf(w, validString, value.ID, value.Token, timeLeft)
+
+	if registrar.Validate(value.ID, value.Token) {
+		timeLeft := value.Expires.Sub(time.Now())
+		fmt.Fprintf(w, validString, value.ID, value.Token, timeLeft)
+		return
+	}
+	fmt.Fprintln(w, "You have an invalid cookie!!")
 }
 
 // ServeCookies is a handler for the cookie server, called by server.go, that

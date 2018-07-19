@@ -26,7 +26,7 @@ func newRegistrar() *registrar {
 		queryChannel: make(chan query),
 		entering:     make(chan user),
 		leaving:      make(chan int),
-		userMap: make(map[int]([]byte)),
+		userMap:      make(map[int]([]byte)),
 	}
 }
 
@@ -34,17 +34,19 @@ func newRegistrar() *registrar {
 // When one is received, the registrar will either add, delete, or lookup
 // an entry.  Use this function in its own go-routine.
 func (r *registrar) run() {
-	select {
-	case id := <-r.leaving:
-		delete(r.userMap, id)
+	for {
+		select {
+		case id := <-r.leaving:
+			delete(r.userMap, id)
 
-	case user := <-r.entering:
-		r.userMap[user.id] = user.token
+		case user := <-r.entering:
+			r.userMap[user.id] = user.token
 
-	case query := <-r.queryChannel:
-		token, ok := r.userMap[query.user.id]
-		answer := (ok && bytes.Equal(token, query.user.token))
-		query.sendback <- answer
+		case query := <-r.queryChannel:
+			token, ok := r.userMap[query.user.id]
+			answer := (ok && bytes.Equal(token, query.user.token))
+			query.sendback <- answer
+		}
 	}
 }
 
