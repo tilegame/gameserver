@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"github.com/fractalbach/ninjaServer/cookiez"
+	"github.com/fractalbach/ninjaServer/cookiez/registrar"
 	"github.com/fractalbach/ninjaServer/echoserver"
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -79,15 +80,17 @@ var (
 )
 
 var endpoints = map[string]func(http.ResponseWriter, *http.Request){
-	"/ws":      serveWebSocket,
-	"/ws/echo": serveWebSocketEcho,
-	"/cookie":  cookiez.ServeCookies,
+	"/ws":       serveWebSocket,
+	"/ws/echo":  serveWebSocketEcho,
+	"/cookie":   cookiez.ServeCookies,
+	"/sessions": registrar.HandleInfo,
 }
 
 var endpointDescriptions = map[string]string{
-	"/ws":      "Main websocket connection for game (not implemented yet)",
-	"/ws/echo": "echo server used for testing connection speeds",
-	"/cookie":  "generates and/or validates new cookies for clients",
+	"/ws":       "Main websocket connection for game (not implemented yet)",
+	"/ws/echo":  "echo server used for testing connection speeds",
+	"/cookie":   "generates and/or validates new cookies for clients",
+	"/sessions": "generates a list of active sessions",
 }
 
 var BasicPagePlate = template.Must(template.New("basic").Parse(`

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fractalbach/fractalnet/namegen"
 	"github.com/fractalbach/ninjaServer/cookiez/registrar"
 	"github.com/gorilla/securecookie"
 )
@@ -21,7 +22,7 @@ const (
 const loginString = `
 You have logged in!
 
-Username: (todo)
+Username: %s
 PlayerID: %d
 Token:    %x
 Duration: %s
@@ -32,7 +33,7 @@ Try Refreshing the page to see if you stay logged in!
 const validString = `
 You have a validated cookie!  Commands sent with this cookie will be accepted.
 
-Username: (todo)
+Username: %s
 PlayerID: %d
 Token:    %x
 TimeLeft: %s
@@ -45,6 +46,7 @@ var (
 
 type userData struct {
 	ID      int
+	Name    string
 	Token   []byte
 	Expires time.Time
 }
@@ -52,13 +54,10 @@ type userData struct {
 func newUserData() userData {
 	return userData{
 		ID:      nextID(),
+		Name:    namegen.GenerateUsername(),
 		Token:   securecookie.GenerateRandomKey(32),
 		Expires: time.Now().Add(SessionDuration),
 	}
-}
-
-func (u *userData) String() string {
-	return fmt.Sprintf("id: %d, jumble: %x", u.ID, u.Token)
 }
 
 // increments the package's global variable "idIter", copies that new value,
@@ -80,8 +79,8 @@ func gimmeCookie() *securecookie.SecureCookie {
 
 // SetCookieHandler is called by the server to hand out cookies.
 func setCookieHandler(w http.ResponseWriter, r *http.Request) {
-	value := newUserData()
-	encoded, err := s.Encode(MainCookieName, value)
+	v := newUserData()
+	encoded, err := s.Encode(MainCookieName, v)
 	if err != nil {
 		log.Println(err)
 		return
@@ -90,11 +89,14 @@ func setCookieHandler(w http.ResponseWriter, r *http.Request) {
 		Name:   MainCookieName,
 		Value:  encoded,
 		Path:   "/",
-		MaxAge: int(SessionDuration.Seconds()),
+		MaxAge: MaxAgeSeconds,
 	}
 	http.SetCookie(w, cookie)
-	registrar.AddUser(value.ID, value.Token, SessionDuration)
-	fmt.Fprintf(w, loginString, value.ID, value.Token, SessionDuration)
+	user := registrar.User{v.Name, v.Token}
+	registrar.Add(registrar.UserSession{
+		user, time.Now().Add(SessionDuration),
+	})
+	fmt.Fprintf(w, loginString, v.Name, v.ID, v.Token, SessionDuration)
 }
 
 // ReadCookieHandler checks the client's cookies, and prints back a message if
@@ -106,21 +108,26 @@ func readCookieHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err1)
 		return
 	}
-	value := userData{}
-	err2 := s.Decode(MainCookieName, cookie.Value, &value)
+	v := userData{}
+	err2 := s.Decode(MainCookieName, cookie.Value, &v)
 	if err2 != nil {
-		fmt.Fprintln(w, "You're a strange cookie! Here's a new one.")
-		log.Println(err2)
+		fmt.Fprintln(w, "Invalid cookie! Here's a new one.")
+		log.Println(r.RemoteAddr, err2)
 		setCookieHandler(w, r)
 		return
 	}
-
-	if registrar.Validate(value.ID, value.Token) {
-		timeLeft := value.Expires.Sub(time.Now())
-		fmt.Fprintf(w, validString, value.ID, value.Token, timeLeft)
+	user := registrar.User{
+		Name:  v.Name,
+		Token: v.Token,
+	}
+	if registrar.Validate(user) {
+		timeLeft := v.Expires.Sub(time.Now())
+		fmt.Fprintf(w, validString, v.Name, v.ID, v.Token, timeLeft)
+		return
+	} else {
+		fmt.Fprintln(w, "You have an invalid cookie!!")
 		return
 	}
-	fmt.Fprintln(w, "You have an invalid cookie!!")
 }
 
 // ServeCookies is a handler for the cookie server, called by server.go, that

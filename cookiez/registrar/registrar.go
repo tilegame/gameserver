@@ -2,31 +2,75 @@ package registrar
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
 	"time"
 )
 
-type user struct {
-	id    int
-	token []byte
-}
-type query struct {
-	user     user
-	sendback chan (bool)
+// User consists of a username and it's secret token, it can be passed
+// to the Validate() function to confirm that the username and token
+// match each other in the registrar.
+type User struct {
+	Name  string
+	Token []byte
 }
 
+// UserSession fully defines a new entry into the registar.  It can be
+// passed to the AddUser() function.  When Validate() is called, the
+// expiration time is checked.  If the current time is past the
+// expiration time, then Validate() returns false.
+type UserSession struct {
+	User
+	Expiration time.Time
+}
+
+// Info is for checking on the status of the registrar.  It will
+// usually be converted into JSON format and displayed publicly to see
+// who's logged in.  Since it's public, it will only show
+// non-revealing information like the Usernames, but won't contain
+// private things like the session tokens.
+//
+// ActiveSessions is a count of the number of sessions in the
+// registrar, which might be different from the number users are
+// actually online.
+type Info struct {
+	ActiveSessions int
+	UserList       []string
+}
+
+// savedSession is used internally as the "value" in the registrar,
+// where the "key" is a username string.
+type savedSession struct {
+	token      []byte
+	expiration time.Time
+}
+
+// query is used internally, adding a sendback channel to the User
+// structure.  This enabls the registrar to send a response message
+// back with the answer "true" or "false".
+type query struct {
+	User
+	sendback chan bool
+}
+
+// registrar is the main object contains a hash map to store the user
+// sessions, and several channels which allow it to be accessed
+// concurrently.
 type registrar struct {
 	queryChannel chan query
-	entering     chan user
-	leaving      chan int
-	userMap      map[int]([]byte)
+	entering     chan UserSession
+	leaving      chan string
+	userMap      map[string]savedSession
 }
 
 func newRegistrar() *registrar {
 	return &registrar{
 		queryChannel: make(chan query),
-		entering:     make(chan user),
-		leaving:      make(chan int),
-		userMap:      make(map[int]([]byte)),
+		entering:     make(chan UserSession),
+		leaving:      make(chan string),
+		userMap:      make(map[string]savedSession),
 	}
 }
 
@@ -36,42 +80,62 @@ func newRegistrar() *registrar {
 func (r *registrar) run() {
 	for {
 		select {
-		case id := <-r.leaving:
-			delete(r.userMap, id)
+		case name := <-r.leaving:
+			delete(r.userMap, name)
 
-		case user := <-r.entering:
-			r.userMap[user.id] = user.token
+		case s := <-r.entering:
+			r.userMap[s.Name] = savedSession{
+				token:      s.Token,
+				expiration: s.Expiration,
+			}
 
-		case query := <-r.queryChannel:
-			token, ok := r.userMap[query.user.id]
-			answer := (ok && bytes.Equal(token, query.user.token))
-			query.sendback <- answer
+		case q := <-r.queryChannel:
+			s, ok := r.userMap[q.Name]
+			q.sendback <- (ok &&
+				bytes.Equal(s.token, q.Token) &&
+				time.Now().Before(s.expiration))
 		}
 	}
 }
 
-// validate is safe for concurrent use.  Returns true or false.
-// If the player is "logged-in" based on the given credentials, return true.
-func (r *registrar) validate(user user) bool {
+func (r *registrar) validate(user User) bool {
 	answer := make(chan bool)
-	r.queryChannel <- query{user: user, sendback: answer}
+	r.queryChannel <- query{user, answer}
 	return <-answer
 }
 
-// add is safe for concurrent use.  Add a new (id, hash) pair to the registrar.
-func (r *registrar) add(user user) {
-	r.entering <- user
+func (r *registrar) add(session UserSession) {
+	r.entering <- session
 }
 
-// remove is safe for concurrent use. Removes a player from the registrar.
-func (r *registrar) remove(id int) {
-	r.leaving <- id
+func (r *registrar) remove(name string) {
+	r.leaving <- name
 }
 
-// userTimeBomb is safe for concurrent use.
-func (r *registrar) userTimeBomb(id int, t time.Duration) {
-	defer r.remove(id)
+func (r *registrar) userTimeBomb(name string, t time.Duration) {
+	defer r.remove(name)
 	time.Sleep(t)
+}
+
+// not for concurrent use.  Call internally from within the registrar.
+func (r *registrar) clean() {}
+
+// maybe okay for concurrent use.  Not sure yet.  Copies the whole
+// map, then extracts the useful information from the copy.  Remake
+// this function when there are more players, and it becomes
+// impractical to copy so much data.
+func (r *registrar) generateInfo() *Info {
+	mapCopy := r.userMap
+	info := &Info{
+		ActiveSessions: len(mapCopy),
+		UserList:       make([]string, len(mapCopy)),
+	}
+	i := 0
+	for name := range mapCopy {
+		info.UserList[i] = name
+		i++
+	}
+	return info
 }
 
 // --------------------------------------------------------------------
@@ -82,36 +146,56 @@ func init() {
 	go soloReg.run()
 }
 
-// AddUser registers a user by their id and token, and starts a timer
-// that automatically removes them from the registrar after the timeout.
-func AddUser(id int, token []byte, timeout time.Duration) {
-	soloReg.add(user{id, token})
-	go soloReg.userTimeBomb(id, timeout)
+// Add creates a new UserSession in the registrar.  It is save for
+// concurrent use.  Any existing entries under the same username will
+// be overwritten, so it can be used to update a user's session token
+// and session duration.  This Add() function is blocking, so once it
+// returns, you know that the userSession has been successfully added
+// (or overwritten) to the registrar.
+func Add(session UserSession) {
+	soloReg.add(session)
 }
 
-// Validate returns true if (id, token) are in the registrar.  Returns false
-// if they are not registered. Returns false if the tokens do not match.
-func Validate(id int, token []byte) bool {
-	return soloReg.validate(user{id, token})
+// Validate returns true if the username matches the registered token
+// and its expiration time has not yet passed.  Otherwise, Validate()
+// will return false.  Safe for concurrent use.
+func Validate(user User) bool {
+	return soloReg.validate(user)
 }
 
-// UserTimeBomb creates a ticker countdown that will eventually trigger a
-// deletion of the player.  This time cannot be reset, because its intended
-// use is for removing old session tokens from the registrar.
+// UserTimeBomb creates a ticker countdown that will eventually
+// trigger a deletion of the player.  This time cannot be reset,
+// because its intended use is for removing old session tokens from
+// the registrar.
 //
-// When UserTimeBomb is called, a new goroutine is launched, and UserTimeBomb
-// returns immediately after.  The goroutine sleeps for the specified amount
-// of time, and then sends a "delete user with <id>" message to the registrar.
-// Thus, UserTimeBomb is safe for concurrent use: because its underlying
-// mechanism is also safe for concurrent use.
+// When UserTimeBomb is called, a new goroutine is launched, and
+// UserTimeBomb returns immediately after.  The goroutine sleeps for
+// the specified amount of time, and then sends a "delete user with
+// <id>" message to the registrar.  Thus, UserTimeBomb is safe for
+// concurrent use: because its underlying mechanism is also safe for
+// concurrent use.
 //
 // Note:
 //
-// There is probably no need to call this function, because it will be called
-// automatically by AddUser(), since in this implementation of the registrar,
-// all registered users must have a finite time before being removed.
-func UserTimeBomb(id int, timeout time.Duration) {
-	go soloReg.userTimeBomb(id, timeout)
+// There is probably no need to call this function, because the
+// registrar will periodically clear itself of old entries.
+
+func UserTimeBomb(name string, timeout time.Duration) {
+	go soloReg.userTimeBomb(name, timeout)
 }
 
 // --------------------------------------------------------------------
+
+func HandleInfo(w http.ResponseWriter, r *http.Request) {
+	msg, err := json.Marshal(soloReg.generateInfo())
+	if err != nil {
+		log.Println("Registrar:", err)
+		fmt.Fprint(w, "error generating registrar info")
+		return
+	}
+	//w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(msg)
+	if err != nil {
+		log.Println("Registrar:", "error sending json message")
+	}
+}
