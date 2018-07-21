@@ -25,13 +25,35 @@ URL | Description
 wss://thebachend.com/ws | Main websocket endpoint for the game
 wss://thebachend.com/ws/echo | The echo server, used for speed tests and other experiments
 https://thebachend.com/cookie | Cookie Handler; used for storing player ID and logins; a precursor to the login page.
+https://thebachend.com/sessions | Displays the number of active sessions, and a list of usernames.
 
-## Current Roadmap
+## Roadmap
 
-- [x] sessions
-- [ ] simple login (no disk saves)
-- [ ] chat
-- [ ] character movement
+### Chapter 1: The Early Beginnings
+
+- Simple Login
+  - [x] session cookies
+  - [x] registrar (holds active sessions)
+  - [x] usernames
+  - [ ] passwords
+  - [ ] web page to enter in username/password
+- Game State
+  - [ ] positions
+  - [ ] movement
+  - [ ] character login/logout
+- Chat
+  - [ ] in-game chat
+  - [ ] separate chatroom
+  
+  
+### Chapter 2: I Can Haz Game?
+
+- Random Game Objects
+- Player Interactions
+- Arena Battles
+- Wins/Losses/Etc.
+- Nonvolatile Memory
+
 
 ## Websockets
 
