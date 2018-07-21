@@ -90,6 +90,7 @@ func setCookieHandler(w http.ResponseWriter, r *http.Request) {
 		Value:  encoded,
 		Path:   "/",
 		MaxAge: MaxAgeSeconds,
+		Secure: true,
 	}
 	http.SetCookie(w, cookie)
 	user := registrar.User{v.Name, v.Token}
