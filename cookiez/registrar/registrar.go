@@ -193,7 +193,7 @@ func HandleInfo(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "error generating registrar info")
 		return
 	}
-	//w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(msg)
 	if err != nil {
 		log.Println("Registrar:", "error sending json message")
