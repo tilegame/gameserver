@@ -2,7 +2,8 @@
 package echoserver
 
 import (
-	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -29,7 +30,11 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			break
 		}
-		message = bytes.ToUpper(message)
+
+		// Process the message and replace it with a response.
+		message = handleMessage(message)
+
+		// Send the response back.
 		err = conn.WriteMessage(messageType, message)
 		if err != nil {
 			log.Println(err)
@@ -37,4 +42,51 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Println(err)
+}
+
+type IncomingMessage struct {
+	ID  int
+	Msg string
+}
+
+type ResultMessage struct {
+	ID     int
+	Result string
+	Error  string
+}
+
+func handleMessage(data []byte) []byte {
+	j := new(IncomingMessage)
+	json.Unmarshal(data, j)
+	result := handleCommand(j.Msg)
+	result.ID = j.ID
+	outbytes, err := json.Marshal(result)
+	if err != nil {
+		log.Println(err)
+	}
+	return outbytes
+}
+
+// count is just for testing purposes, remove it later.
+var somenumber int = 888
+
+func nextCount() int {
+	somenumber++
+	return somenumber
+}
+
+// Where all the magic happens.  Accepts a command, does something,
+// then returns a string as a response.  The boolean indicates an
+// error.
+func handleCommand(cmd string) ResultMessage {
+	out := ResultMessage{}
+	switch cmd {
+	case "hello":
+		out.Result = "well hello to you too!"
+	case "gimme":
+		out.Result = fmt.Sprint("special number is ", nextCount())
+	default:
+		out.Error = "command not recognized."
+	}
+	return out
 }
