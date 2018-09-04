@@ -3,7 +3,6 @@ package echoserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -50,9 +49,9 @@ type IncomingMessage struct {
 }
 
 type ResultMessage struct {
-	ID     int
-	Result string
-	Error  string
+	ID     int         `json:"id"`
+	Result interface{} `json:"result,omitempty"`
+	Error  interface{} `json:"error,omitempty"`
 }
 
 func handleMessage(data []byte) []byte {
@@ -84,9 +83,9 @@ func handleCommand(cmd string) ResultMessage {
 	case "hello":
 		out.Result = "well hello to you too!"
 	case "gimme":
-		out.Result = fmt.Sprint("special number is ", nextCount())
+		out.Result = nextCount()
 	default:
-		out.Error = "command not recognized."
+		out.Error = "command not found."
 	}
 	return out
 }
