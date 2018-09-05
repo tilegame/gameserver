@@ -184,6 +184,7 @@ func runServer() {
 	}
 	if !usingTLS {
 		s := &http.Server{Addr: addr, Handler: mux}
+		log.Println("started server on:", s.Addr)
 		log.Fatal(s.ListenAndServe())
 	}
 	m := &autocert.Manager{
@@ -197,6 +198,7 @@ func runServer() {
 		TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
 		Handler:   mux,
 	}
+	log.Println("started server on:", s.Addr)
 	log.Fatal(s.ListenAndServeTLS("", ""))
 }
 
@@ -218,10 +220,14 @@ func serveMinimal(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO: use this /ws endpoint for the main game websocket.
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Not yet implemented.")
 }
 
+// TODO: use this /ws/echo endpoint for literally just an echo testing
+// server, or change it to /ws/speed and use it as a connection speed
+// testing server.
 func serveWebSocketEcho(w http.ResponseWriter, r *http.Request) {
 	echoserver.HandleWs(w, r)
 }
