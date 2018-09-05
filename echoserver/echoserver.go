@@ -14,10 +14,6 @@ var (
 	upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
-
-	// todo: use gamestate instead.
-	// currently, this is not concurrency safe.
-	playerlist = map[string]bool{}
 )
 
 // HandleWs is called by ninjaServer.go and converts all received
@@ -49,6 +45,22 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 	log.Println(err)
 }
 
+// ~~~~~~~~~~~~~~~~~~ Game ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+// TODO: move these out of this file, and make a seperate file for the
+// state of the game.  Variables related to the game.
+var (
+	nextPlayerId = 136
+
+	// playerlist maps usernames to players.
+	playerlist = map[string]*Player{}
+)
+
+func getNextPlayerId() int {
+	nextPlayerId++
+	return nextPlayerId
+}
+
 type IncomingMessage struct {
 	ID     int
 	Method string
@@ -56,9 +68,11 @@ type IncomingMessage struct {
 }
 
 type ResultMessage struct {
-	ID     int         `json:"id"`
-	Result interface{} `json:"result,omitempty"`
-	Error  interface{} `json:"error,omitempty"`
+	ID       int         `json:"id"`
+	Result   interface{} `json:"result,omitempty"`
+	Error    interface{} `json:"error,omitempty"`
+	Kind     string      `json:"kind,omitempty"`
+	Comments string      `json:"comments,omitempty"`
 }
 
 func handleMessage(data []byte) []byte {
@@ -97,18 +111,25 @@ func handleCommand(cmd string, params []interface{}) ResultMessage {
 	switch cmd {
 	case "hello":
 		out.Result = "well hello to you too!"
+
 	case "myparams":
+		out.Comments = "type info about the given parameters."
 		out.Result = fmt.Sprint(params)
+
 	case "add":
-		return doAddCmd(params)		
+		return doAddCmd(params)
+
 	case "list":
-		out.Result = sprintPlayerList()
+		out.Kind = "playerlist"
+		out.Result = playerlist
+
 	default:
 		out.Error = "command not found."
 	}
 	return out
 }
 
+// Adds a player to the playerlist.
 func doAddCmd(params []interface{}) ResultMessage {
 	out := ResultMessage{}
 
@@ -126,17 +147,34 @@ func doAddCmd(params []interface{}) ResultMessage {
 	}
 
 	// add the player to the playerlist.
-	playerlist[name] = true
+	playerlist[name] = &Player{
+		PlayerId:        getNextPlayerId(),
+		CurrentLocation: Loc{5, 5},
+		TargetLocation:  Loc{5, 5},
+	}
 	out.Result = true
 	return out
 }
 
+// converts the playerlist into an array of usernames, friendly for
+// displaying the list of added players.
 func sprintPlayerList() []string {
 	s := make([]string, len(playerlist))
 	i := 0
-	for key, _ := range(playerlist) {
+	for key, _ := range playerlist {
 		s[i] = key
 		i++
 	}
 	return s
+}
+
+type Loc struct {
+	X int
+	Y int
+}
+
+type Player struct {
+	PlayerId        int
+	CurrentLocation Loc
+	TargetLocation  Loc
 }
