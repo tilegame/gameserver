@@ -68,11 +68,11 @@ type IncomingMessage struct {
 }
 
 type ResultMessage struct {
-	ID       int         `json:"id"`
-	Result   interface{} `json:"result,omitempty"`
-	Error    interface{} `json:"error,omitempty"`
-	Kind     string      `json:"kind,omitempty"`
-	Comments string      `json:"comments,omitempty"`
+	ID      int         `json:"id"`
+	Result  interface{} `json:"result,omitempty"`
+	Error   interface{} `json:"error,omitempty"`
+	Kind    string      `json:"kind,omitempty"`
+	Comment string      `json:"comment,omitempty"`
 }
 
 func handleMessage(data []byte) []byte {
@@ -112,9 +112,14 @@ func handleCommand(cmd string, params []interface{}) ResultMessage {
 	case "hello":
 		out.Result = "well hello to you too!"
 
-	case "myparams":
-		out.Comments = "type info about the given parameters."
-		out.Result = fmt.Sprint(params)
+	case "params":
+		out.Comment = "type info about the given parameters in the form of (type, value)."
+		s := make([]string, len(params))
+		for i, _ := range params {
+			q := params[i]
+			s[i] = fmt.Sprintf("(%T, %v)", q, q)
+		}
+		out.Result = s
 
 	case "add":
 		return doAddCmd(params)
@@ -122,6 +127,15 @@ func handleCommand(cmd string, params []interface{}) ResultMessage {
 	case "list":
 		out.Kind = "playerlist"
 		out.Result = playerlist
+
+	case "move":
+		return doMoveCmd(params)
+
+	case "update":
+		for _, p := range playerlist {
+			p.UpdatePosition()
+		}
+		out.Result = true
 
 	default:
 		out.Error = "command not found."
@@ -148,10 +162,42 @@ func doAddCmd(params []interface{}) ResultMessage {
 
 	// add the player to the playerlist.
 	playerlist[name] = &Player{
-		PlayerId:        getNextPlayerId(),
-		CurrentLocation: Loc{5, 5},
-		TargetLocation:  Loc{5, 5},
+		PlayerId:   getNextPlayerId(),
+		CurrentPos: Loc{5, 5},
+		TargetPos:  Loc{5, 5},
 	}
+	out.Result = true
+	return out
+}
+
+func doMoveCmd(params []interface{}) ResultMessage {
+	out := ResultMessage{}
+
+	// param length check.
+	if len(params) != 3 {
+		out.Error = "expected 3 params: (username, x, y)"
+		return out
+	}
+
+	// convert types.
+	name, ok1 := params[0].(string)
+	x, ok2 := params[1].(float64)
+	y, ok3 := params[2].(float64)
+	if !(ok1 && ok2 && ok3) {
+		out.Error = "type error: expected (string, int, int)"
+		return out
+	}
+
+	// retrieve player pointer.
+	p, ok4 := playerlist[name]
+	if !ok4 {
+		out.Error = "player does not exist."
+		return out
+	}
+
+	// update positions and return successfull.
+	p.TargetPos.X = int(x)
+	p.TargetPos.Y = int(y)
 	out.Result = true
 	return out
 }
@@ -174,7 +220,47 @@ type Loc struct {
 }
 
 type Player struct {
-	PlayerId        int
-	CurrentLocation Loc
-	TargetLocation  Loc
+	PlayerId   int
+	CurrentPos Loc
+	TargetPos  Loc
+}
+
+func (p *Player) UpdatePosition() {
+	next := p.CurrentPos
+
+	if p.CurrentPos.X == p.TargetPos.X {
+		goto Skip1
+	}
+	if p.CurrentPos.X < p.TargetPos.X {
+		next.X = p.CurrentPos.X + 1
+	} else {
+		next.Y = p.CurrentPos.X - 1
+	}
+Skip1:
+	if p.CurrentPos.Y == p.TargetPos.Y {
+		goto Skip2
+	}
+	if p.CurrentPos.Y < p.TargetPos.Y {
+		next.Y = p.CurrentPos.Y + 1
+	} else {
+		next.Y = p.CurrentPos.Y - 1
+	}
+Skip2:
+	// Check for collisions at new x-position
+	if NoCollisionAt(next.X, p.CurrentPos.Y) {
+		p.CurrentPos.X = next.X
+	}
+
+	// Check for collisions at new y-position
+	if NoCollisionAt(p.CurrentPos.X, next.X) {
+		p.CurrentPos.Y = next.Y
+	}
+}
+
+// TODO: add collision checking; currently there are no collisions.
+//
+// NoCollisionAt checks the tile at (x,y) to see if there is something
+// that might prevent movement to that tile.
+func NoCollisionAt(x, y int) bool {
+	return true
 }
