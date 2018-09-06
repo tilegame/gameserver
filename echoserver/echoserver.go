@@ -33,7 +33,7 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Process the message and replace it with a response.
-		message = handleMessage(message)
+		message = send(message)
 
 		// Send the response back.
 		err = conn.WriteMessage(messageType, message)
@@ -56,6 +56,10 @@ var (
 	playerlist = map[string]*Player{}
 )
 
+func init() {
+	go runPostOffice()
+}
+
 func getNextPlayerId() int {
 	nextPlayerId++
 	return nextPlayerId
@@ -73,6 +77,36 @@ type ResultMessage struct {
 	Error   interface{} `json:"error,omitempty"`
 	Kind    string      `json:"kind,omitempty"`
 	Comment string      `json:"comment,omitempty"`
+}
+
+type postcard struct {
+	data []byte
+	ret  chan []byte
+}
+
+func send(data []byte) []byte {
+	myMailbox := make(chan []byte)
+	card := postcard{
+		data: data,
+		ret:  myMailbox,
+	}
+	postoffice <- card
+	answer := <-myMailbox
+	return answer
+}
+
+// postoffice is the name of the channel that you can send postcards
+// to!  It only works if you call runPostOffice() in a goroutine.
+var postoffice = make(chan postcard)
+
+// run this in it's own goroutine.
+func runPostOffice() {
+	for {
+		select {
+		case m := <-postoffice:
+			m.ret <- handleMessage(m.data)
+		}
+	}
 }
 
 func handleMessage(data []byte) []byte {
@@ -124,6 +158,9 @@ func handleCommand(cmd string, params []interface{}) ResultMessage {
 	case "add":
 		return doAddCmd(params)
 
+	case "remove":
+		handleRemove(params, &out)
+
 	case "list":
 		out.Kind = "playerlist"
 		out.Result = playerlist
@@ -168,6 +205,20 @@ func doAddCmd(params []interface{}) ResultMessage {
 	}
 	out.Result = true
 	return out
+}
+
+func handleRemove(params []interface{}, out *ResultMessage) {
+	if len(params) != 1 {
+		out.Error = "expected 1 param: (username)"
+		return
+	}
+	name, ok := params[0].(string)
+	if !ok {
+		out.Error = "type error"
+		return
+	}
+	delete(playerlist, name)
+	out.Result = true
 }
 
 func doMoveCmd(params []interface{}) ResultMessage {
@@ -234,7 +285,7 @@ func (p *Player) UpdatePosition() {
 	if p.CurrentPos.X < p.TargetPos.X {
 		next.X = p.CurrentPos.X + 1
 	} else {
-		next.Y = p.CurrentPos.X - 1
+		next.X = p.CurrentPos.X - 1
 	}
 Skip1:
 	if p.CurrentPos.Y == p.TargetPos.Y {
