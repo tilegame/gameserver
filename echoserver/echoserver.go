@@ -4,17 +4,28 @@ package echoserver
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 	//"github.com/fractalbach/ninjaServer/gamestate"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 )
 
-var (
-	upgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool { return true },
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+type client struct {
+	conn *websocket.Conn
+}
+
+var clientlist = map[*client]bool{}
+
+func broadcast(data []byte) {
+	for client := range clientlist {
+		client.conn.WriteMessage(websocket.TextMessage, data)
 	}
-)
+}
 
 // HandleWs is called by ninjaServer.go and converts all received
 // messages into uppercase, and sends it back to the original source.
@@ -24,7 +35,19 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	defer conn.Close()
+	// create the client object and add it to the list.
+	me := &client{
+		conn: conn,
+	}
+	clientlist[me] = true
+
+	// Remove self from the client list when function returns.
+	defer func() {
+		delete(clientlist, me)
+		conn.Close()
+	}()
+
+	// wait for new incoming messages.
 	for {
 		messageType, message, err := conn.ReadMessage()
 		if err != nil {
@@ -51,13 +74,12 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 // state of the game.  Variables related to the game.
 var (
 	nextPlayerId = 136
-
-	// playerlist maps usernames to players.
-	playerlist = map[string]*Player{}
+	playerlist   = map[string]*Player{}
 )
 
 func init() {
 	go runPostOffice()
+	go runGameTicker()
 }
 
 func getNextPlayerId() int {
@@ -72,7 +94,7 @@ type IncomingMessage struct {
 }
 
 type ResultMessage struct {
-	ID      int         `json:"id"`
+	ID      int         `json:"id",omitempty`
 	Result  interface{} `json:"result,omitempty"`
 	Error   interface{} `json:"error,omitempty"`
 	Kind    string      `json:"kind,omitempty"`
@@ -147,7 +169,7 @@ func handleCommand(cmd string, params []interface{}) ResultMessage {
 		out.Result = "well hello to you too!"
 
 	case "params":
-		out.Comment = "type info about the given parameters in the form of (type, value)."
+		out.Comment = "type info about the given parameters."
 		s := make([]string, len(params))
 		for i, _ := range params {
 			q := params[i]
@@ -314,4 +336,39 @@ Skip2:
 // that might prevent movement to that tile.
 func NoCollisionAt(x, y int) bool {
 	return true
+}
+
+var (
+	TICK_DURATION = time.Millisecond * 500
+	StartTickerChan = make(chan bool)
+	StopTickerChan  = make(chan bool)
+)
+
+// The Game Ticker continuously updates the game, by checking if
+// players have moved, and updating their positions at fixed
+// intervals.
+func runGameTicker() {
+	// note: the ability to create additional tickers might result
+	// in goroutine leaks, because the docs say that the
+	// ticker.Stop() does not actually close the channel.
+	ticker := time.NewTicker(TICK_DURATION)
+	for {
+		select {
+		case <-StartTickerChan:
+			ticker = time.NewTicker(TICK_DURATION)
+		case <-StopTickerChan:
+			ticker.Stop()
+		case <-ticker.C:
+			doGameTick()
+		}
+	}
+}
+
+func doGameTick() {
+	if len(playerlist) == 0 || len(clientlist) == 0 {
+		return
+	}
+	send([]byte(`{"method": "update"}`))
+	out := send([]byte(`{"method": "list"}`))
+	broadcast(out)
 }
