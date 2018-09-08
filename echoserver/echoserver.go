@@ -75,6 +75,12 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 var (
 	nextPlayerId = 136
 	playerlist   = map[string]*Player{}
+	activeplayers = map[string]bool{}
+
+	TICK_DURATION = time.Millisecond * 500
+	PLAYERLIST_REFRESH_DURATION = time.Minute
+	StartTickerChan = make(chan bool)
+	StopTickerChan  = make(chan bool)
 )
 
 func init() {
@@ -226,6 +232,7 @@ func doAddCmd(params []interface{}) ResultMessage {
 		TargetPos:  Loc{5, 5},
 	}
 	out.Result = true
+	setPlayerToActive(name)
 	return out
 }
 
@@ -272,6 +279,7 @@ func doMoveCmd(params []interface{}) ResultMessage {
 	p.TargetPos.X = int(x)
 	p.TargetPos.Y = int(y)
 	out.Result = true
+	setPlayerToActive(name)
 	return out
 }
 
@@ -338,11 +346,7 @@ func NoCollisionAt(x, y int) bool {
 	return true
 }
 
-var (
-	TICK_DURATION = time.Millisecond * 500
-	StartTickerChan = make(chan bool)
-	StopTickerChan  = make(chan bool)
-)
+
 
 // The Game Ticker continuously updates the game, by checking if
 // players have moved, and updating their positions at fixed
@@ -352,6 +356,7 @@ func runGameTicker() {
 	// in goroutine leaks, because the docs say that the
 	// ticker.Stop() does not actually close the channel.
 	ticker := time.NewTicker(TICK_DURATION)
+	refresher := time.NewTicker(PLAYERLIST_REFRESH_DURATION)
 	for {
 		select {
 		case <-StartTickerChan:
@@ -360,6 +365,8 @@ func runGameTicker() {
 			ticker.Stop()
 		case <-ticker.C:
 			doGameTick()
+		case <- refresher.C:
+			doPlayerlistRefresh()
 		}
 	}
 }
@@ -371,4 +378,25 @@ func doGameTick() {
 	send([]byte(`{"method": "update"}`))
 	out := send([]byte(`{"method": "list"}`))
 	broadcast(out)
+}
+
+// looks through the list of players, and compares them to the
+// activeplayer set.  If there are any players who AREN'T in the
+// activeplayer set, then they are considered "inactive" and will be
+// logged out.
+func doPlayerlistRefresh() {
+	for name := range playerlist {
+		_, ok := activeplayers[name]
+		if !ok {
+			delete(playerlist, name)
+		}
+	}
+	// clear the activeplayer set.
+	activeplayers = make(map[string]bool)
+}
+
+// call setPlayerToActive when a player does some action that allows
+// it to stay logged in.
+func setPlayerToActive(name string) {
+	activeplayers[name] = true
 }
