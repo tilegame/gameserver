@@ -73,14 +73,14 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 // TODO: move these out of this file, and make a seperate file for the
 // state of the game.  Variables related to the game.
 var (
-	nextPlayerId = 136
-	playerlist   = map[string]*Player{}
+	nextPlayerId  = 136
+	playerlist    = map[string]*Player{}
 	activeplayers = map[string]bool{}
 
-	TICK_DURATION = time.Millisecond * 500
+	TICK_DURATION               = time.Millisecond * 500
 	PLAYERLIST_REFRESH_DURATION = time.Minute
-	StartTickerChan = make(chan bool)
-	StopTickerChan  = make(chan bool)
+	StartTickerChan             = make(chan bool)
+	StopTickerChan              = make(chan bool)
 )
 
 func init() {
@@ -100,7 +100,7 @@ type IncomingMessage struct {
 }
 
 type ResultMessage struct {
-	ID      int         `json:"id",omitempty`
+	ID      int         `json:"id,omitempty"`
 	Result  interface{} `json:"result,omitempty"`
 	Error   interface{} `json:"error,omitempty"`
 	Kind    string      `json:"kind,omitempty"`
@@ -193,6 +193,9 @@ func handleCommand(cmd string, params []interface{}) ResultMessage {
 		out.Kind = "playerlist"
 		out.Result = playerlist
 
+	case "chat":
+		doChatCmd(params, &out)
+
 	case "move":
 		return doMoveCmd(params)
 
@@ -283,6 +286,37 @@ func doMoveCmd(params []interface{}) ResultMessage {
 	return out
 }
 
+func doChatCmd(params []interface{}, out *ResultMessage) {
+	if len(params) != 2 {
+		out.Error = "expected 2 params: (username, chatmessage)"
+		return
+	}
+	name, ok0 := params[0].(string)
+	chatmessage, ok1 := params[1].(string)
+	if !(ok0 && ok1) {
+		out.Error = "type error: expected (string, string)"
+		return
+	}
+	if _, ok := playerlist[name]; !ok {
+		out.Error = "player does not exist."
+		return
+	}	
+	msgtoall := ResultMessage{
+		Kind: "chat",
+		Result: map[string]string{
+			"User":    name,
+			"Message": chatmessage,
+		},
+	}
+	data, err := json.Marshal(msgtoall)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	broadcast(data)
+	return
+}
+
 // converts the playerlist into an array of usernames, friendly for
 // displaying the list of added players.
 func sprintPlayerList() []string {
@@ -346,8 +380,6 @@ func NoCollisionAt(x, y int) bool {
 	return true
 }
 
-
-
 // The Game Ticker continuously updates the game, by checking if
 // players have moved, and updating their positions at fixed
 // intervals.
@@ -365,7 +397,7 @@ func runGameTicker() {
 			ticker.Stop()
 		case <-ticker.C:
 			doGameTick()
-		case <- refresher.C:
+		case <-refresher.C:
 			doPlayerlistRefresh()
 		}
 	}
