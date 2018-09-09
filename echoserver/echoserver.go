@@ -78,7 +78,7 @@ var (
 	activeplayers = map[string]bool{}
 
 	TICK_DURATION               = time.Millisecond * 500
-	PLAYERLIST_REFRESH_DURATION = time.Minute
+	PLAYERLIST_REFRESH_DURATION = 3 * time.Minute
 	StartTickerChan             = make(chan bool)
 	StopTickerChan              = make(chan bool)
 )
