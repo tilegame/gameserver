@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"sync"
 )
 
 var upgrader = websocket.Upgrader{
@@ -17,6 +18,11 @@ var upgrader = websocket.Upgrader{
 
 type client struct {
 	conn *websocket.Conn
+}
+
+type ActiveClientStore struct {
+	clientmap map[*client]bool
+	mux sync.Mutex
 }
 
 var clientlist = map[*client]bool{}

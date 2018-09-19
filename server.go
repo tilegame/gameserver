@@ -15,6 +15,7 @@ import (
 	"github.com/fractalbach/ninjaServer/cookiez"
 	"github.com/fractalbach/ninjaServer/cookiez/registrar"
 	"github.com/fractalbach/ninjaServer/echoserver"
+	"github.com/fractalbach/ninjaServer/wshandle"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -59,11 +60,11 @@ OPTIONS:
 `
 
 const (
-	HelpAddress    = "Host Address and Port for Standard connections."
-	HelpAddressTLS = "Host Address and Port for TLS connections."
-	HelpIndex      = "Homepage file. Only matters if file server is enabled."
-	HelpIO         = "Enable Stdin input and Stdout output."
-	HelpFiles      = "Enables the File Server"
+	HelpAddress = "Host Address and Port to listen on."
+	HelpTLS     = "Enable TLS and AutoCert for LetsEncrypt."
+	HelpIndex   = "Homepage file. Only matters if file server is enabled."
+	HelpIO      = "Enable Stdin input and Stdout output."
+	HelpFiles   = "Enables the File Server"
 )
 
 const (
@@ -134,7 +135,7 @@ func init() {
 	flag.StringVar(&addr, "a", DefaultAddress, HelpAddress)
 	flag.StringVar(&index, "index", DefaultIndex, HelpIndex)
 	flag.BoolVar(&useStdinStdout, "io", false, HelpIO)
-	flag.BoolVar(&usingTLS, "tls", false, HelpAddressTLS)
+	flag.BoolVar(&usingTLS, "tls", false, HelpTLS)
 	flag.BoolVar(&usingFiles, "serve-files", false, HelpFiles)
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, HelpMessage)
@@ -222,7 +223,7 @@ func serveMinimal(w http.ResponseWriter, r *http.Request) {
 
 // TODO: use this /ws endpoint for the main game websocket.
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Not yet implemented.")
+	wshandle.Handle(w, r)
 }
 
 // TODO: use this /ws/echo endpoint for literally just an echo testing
@@ -235,3 +236,4 @@ func serveWebSocketEcho(w http.ResponseWriter, r *http.Request) {
 func logRequest(r *http.Request) {
 	log.Printf("(%v) %v %v %v", r.RemoteAddr, r.Proto, r.Method, r.URL)
 }
+
