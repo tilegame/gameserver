@@ -11,6 +11,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/fractalbach/ninjaServer/cookiez"
 	"github.com/fractalbach/ninjaServer/cookiez/registrar"
@@ -94,41 +96,10 @@ var endpointDescriptions = map[string]string{
 	"/sessions": "generates a list of active sessions",
 }
 
-var BasicPagePlate = template.Must(template.New("basic").Parse(`
-<!doctype html>
-<html lang="end">
-<head>
-<meta charset="utf-8">
-<title>TheBachEnd</title>
-<style>
-table {border-collapse: collapse;}
-table, td, th {border: 1px solid #000; padding: 0.5em;}
-</style>
-</head>
-<body>
-<h1>TheBachEnd</h1>
-<p>
-Welcome to TheBachEnd! 
-You might be looking for the front end, which you can find at
-<a href="https://game.thebachend.com">https://game.thebachend.com</a>
-</p>
-<h2>Endpoints</h2>
-<table>
- <thead><tr> 
-  <th>Endpoint</th>
-  <th>Description</th>
- </tr></thead>
- <tbody>
- {{range $key, $value := . }}
- <tr>
-  <td>{{$key}}</td>
-  <td>{{$value}}</td>
- </tr>
- {{end}}
- </tbody>
-</table>
-</html>
-`))
+var (
+	htmlpagepath   string
+	BasicPagePlate *template.Template
+)
 
 func init() {
 	flag.StringVar(&addr, "address", DefaultAddress, HelpAddress)
@@ -150,6 +121,21 @@ func init() {
 	} else {
 		endpoints["/"] = serveMinimal
 	}
+
+	// Retrieve the directory that contians the source code.  This
+	// allows us to locate the resources folder, which contains
+	// lots of useful things.
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("No caller information")
+	}
+	thefolder := filepath.Dir(filename)
+
+	// Compile the homepage html template.
+	a := "resources/templates/endpoints_info.html"
+	htmlpagepath = filepath.Join(thefolder, a)
+	log.Println("homepage template located at:", htmlpagepath)
+	BasicPagePlate = template.Must(template.ParseFiles(htmlpagepath))
 }
 
 func main() {
@@ -218,6 +204,7 @@ func serveMinimal(w http.ResponseWriter, r *http.Request) {
 	err := BasicPagePlate.Execute(w, endpointDescriptions)
 	if err != nil {
 		fmt.Fprintln(w, "You've reached The Bach End!")
+		log.Println(err)
 	}
 }
 
@@ -236,4 +223,3 @@ func serveWebSocketEcho(w http.ResponseWriter, r *http.Request) {
 func logRequest(r *http.Request) {
 	log.Printf("(%v) %v %v %v", r.RemoteAddr, r.Proto, r.Method, r.URL)
 }
-
