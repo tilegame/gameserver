@@ -4,8 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/fractalbach/ninjaServer)](https://goreportcard.com/report/github.com/fractalbach/ninjaServer)
 [![GoDoc](https://godoc.org/github.com/fractalbach/ninjaServer?status.svg)](https://godoc.org/github.com/fractalbach/ninjaServer)
 
-Repository of the back end for the [Tile Experiments Project](https://github.com/fractalbach/TileExperiments)
-https://thebachend.com 
+Repository for the server of the [Tile Experiments Project](https://github.com/fractalbach/TileExperiments)
 (Still in early development).
 
 
