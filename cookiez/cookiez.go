@@ -40,6 +40,7 @@ TimeLeft: %s
 `
 
 var (
+	reg = registrar.NewRegistrar()
 	s      = gimmeCookie()
 	idIter = 123
 )
@@ -94,7 +95,7 @@ func setCookieHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, cookie)
 	user := registrar.User{v.Name, v.Token}
-	registrar.Add(registrar.UserSession{
+	reg.Add(registrar.UserSession{
 		user, time.Now().Add(SessionDuration),
 	})
 	fmt.Fprintf(w, loginString, v.Name, v.ID, v.Token, SessionDuration)
@@ -121,14 +122,13 @@ func readCookieHandler(w http.ResponseWriter, r *http.Request) {
 		Name:  v.Name,
 		Token: v.Token,
 	}
-	if registrar.Validate(user) {
+	if reg.Validate(user) {
 		timeLeft := v.Expires.Sub(time.Now())
 		fmt.Fprintf(w, validString, v.Name, v.ID, v.Token, timeLeft)
 		return
-	} else {
-		fmt.Fprintln(w, "You have an invalid cookie!!")
-		return
 	}
+	fmt.Fprintln(w, "You have an invalid cookie!!")
+	return
 }
 
 // ServeCookies is a handler for the cookie server, called by server.go, that
@@ -144,3 +144,12 @@ func ServeCookies(w http.ResponseWriter, r *http.Request) {
 	}
 	readCookieHandler(w, r)
 }
+
+
+// HandleInfo displays the information about the registrar created by
+// this cookie handler.
+var HandleInfo = reg.HandleInfo
+
+// func HandleInfo(w http.ResponseWriter, r *http.Request) {
+// 	reg.HandleInfo(w, r)
+// }

@@ -1,4 +1,4 @@
-/* command ninjaServer starts up and controls the endpoints for the backend.
+/*command ninjaServer starts up and controls the endpoints for the backend.
  */
 package main
 
@@ -15,7 +15,6 @@ import (
 	"runtime"
 
 	"github.com/fractalbach/ninjaServer/cookiez"
-	"github.com/fractalbach/ninjaServer/cookiez/registrar"
 	"github.com/fractalbach/ninjaServer/echoserver"
 	"github.com/fractalbach/ninjaServer/wshandle"
 	"golang.org/x/crypto/acme/autocert"
@@ -86,7 +85,7 @@ var endpoints = map[string]func(http.ResponseWriter, *http.Request){
 	"/ws":       serveWebSocket,
 	"/ws/echo":  serveWebSocketEcho,
 	"/cookie":   cookiez.ServeCookies,
-	"/sessions": registrar.HandleInfo,
+	"/sessions": cookiez.HandleInfo,
 }
 
 var endpointDescriptions = map[string]string{
