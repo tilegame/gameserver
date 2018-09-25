@@ -1,16 +1,4 @@
-/*Package commander provides a data structure that can call functions.
-
-The motivation for writing this package was to allow user-accessible
-functions to be written more easily.  The main use-case is to call a
-function with a JSON message.  The JSON provides the Function's Name,
-and the Arguments for that function.  It's very similar to JSON-RPC.
-
-Example Usage:
-   // some example functions that you want accessible.
-   f1 := func() {}
-   f2 := func() {}
-
-*/package commander
+package commander
 
 import (
 	"fmt"
