@@ -4,6 +4,12 @@ The motivation for writing this package was to allow user-accessible
 functions to be written more easily.  The main use-case is to call a
 function with a JSON message.  The JSON provides the Function's Name,
 and the Arguments for that function.  It's very similar to JSON-RPC.
+
+Example Usage:
+   // some example functions that you want accessible.
+   f1 := func() {}
+   f2 := func() {}
+
 */package commander
 
 import (
@@ -11,29 +17,46 @@ import (
 	"reflect"
 )
 
-const errTypeMismatch = `ParameterTypeError: %v; Got: %v; Expected: %v;`
+const (
+	errTypeMismatch = `ParameterTypeError: %v; Got: %v; Expected: %v;`
+	errNotExist     = `Command %v Not Found.`
+)
 
-const errNotExist = `Command %v Not Found.`
-
-var cmdmap = map[string]interface{}{
-	"Command1":  Command1,
-	"Command2":  Command2,
-	"GimmeTrue": GimmeTrue,
-}
-
+// Response is the structure of output from the called function.  If
+// the call was successful, Error == nil, and the Result is an array
+// of ouput. If there is an error, then Result == nil and Error ==
+// "some error string".  Note: when calling Void functions:
+// len(Result) = 0.
 type Response struct {
 	Result interface{}
 	Error  interface{}
 }
 
+// Command is the structure of a callable command.  The Arguments are
+// typed-checked at runtime.
 type Command struct {
 	Name   string
 	Params []interface{}
 }
 
-func (c *Command) Call() (interface{}, error) {
+// CommandCenter contains a Map[string]interface{}, which maps a
+// (Function Name) to its (Function).  This enables a valid 'Command' to
+// lookup the function by name.
+//
+// When Creating a CommandCenter, make sure to create the map.
+// Otherwise, using the method Call() will always return the error
+// "Command Doesn't Exist".
+type CommandCenter struct {
+	FuncMap map[string]interface{}
+}
+
+// Call uses the given 'Command' to lookup a function in the
+// 'CommandCenter.FuncMap'.  If it exists, and all of the argument
+// types match the parameters, then the function will be called.
+func (center *CommandCenter) Call(c *Command) (interface{}, error) {
+
 	// see if the command functions exists.
-	f, ok := cmdmap[c.Name]
+	f, ok := center.FuncMap[c.Name]
 	if !ok {
 		return nil, fmt.Errorf(errNotExist, c.Name)
 	}
@@ -92,16 +115,4 @@ func (c *Command) String() string {
 	}
 	s += ")"
 	return s
-}
-
-func Command1(s string, f float64) {
-	fmt.Println("command 1 was executed, params passed:", s, f)
-}
-
-func Command2(s string, i int) {
-	fmt.Println("woot", s, i)
-}
-
-func GimmeTrue() bool {
-	return true
 }
