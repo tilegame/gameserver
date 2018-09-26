@@ -207,9 +207,11 @@ func serveMinimal(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO: use this /ws endpoint for the main game websocket.
+// TODO: move this somewhere other than server.go
+var clientroom = wshandle.NewClientRoom()
+
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	wshandle.Handle(w, r)
+	clientroom.Handle(w, r)
 }
 
 // TODO: use this /ws/echo endpoint for literally just an echo testing

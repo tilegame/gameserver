@@ -2,6 +2,11 @@ package wshandle
 
 import (
 	"log"
+
+	"github.com/gorilla/websocket"
+
+	"fmt"
+	"net/http"
 )
 
 // ClientRoom handles the list of active clients, and allows messages to be
@@ -16,6 +21,7 @@ type ClientRoom struct {
 	broadcast chan []byte
 	add       chan *Client
 	remove    chan *Client
+	upgrader  websocket.Upgrader
 }
 
 // NewClientRoom creates the client room object and starts the goroutine
@@ -26,6 +32,7 @@ func NewClientRoom() *ClientRoom {
 		broadcast: make(chan []byte),
 		add:       make(chan *Client),
 		remove:    make(chan *Client),
+		upgrader:  makeUpgrader(),
 	}
 	go room.run()
 	return room
@@ -67,3 +74,28 @@ func (r *ClientRoom) Write(p []byte) (int, error) {
 	return n, nil
 }
 
+// Handle is the HTTP/WebSocket handler for a given instance of a
+// ClientRoom.
+func (room *ClientRoom) Handle(w http.ResponseWriter, r *http.Request) {
+	log.Println("new connection:", r.RemoteAddr)
+
+	conn, err := room.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	fmt.Fprintln(room, "Welcome:", r.RemoteAddr)
+
+	client := NewClient(room, conn)
+	room.add <- client
+
+	go client.readPump()
+	go client.writePump()
+}
+
+func makeUpgrader() websocket.Upgrader {
+	return websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+}
