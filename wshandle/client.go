@@ -43,14 +43,13 @@ func (c *Client) Unregister() {
 // through a channel instead of writing it directly to the socket.
 func (c *Client) Write(p []byte) (int, error) {
 	n := len(p)
-	//
-	// TODO: documentation says not to modify slice data during Write(p),
-	//       confirm that this isn't modified:
-	c.send <- p
+	b := make([]byte, len(p))
+	copy(b, p)
+	c.send <- b
 	return n, nil
 }
 
-// Create a new client and run its respective goroutines.
+// NewClient creates a new client and run its respective goroutines.
 // Pass a reference to the ClientRoom that this client will join,
 // and a reference to the websocket connection itself.
 func NewClient(room *ClientRoom, conn *websocket.Conn) *Client {

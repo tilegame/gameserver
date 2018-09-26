@@ -61,7 +61,9 @@ func (r *ClientRoom) run() {
 
 func (r *ClientRoom) Write(p []byte) (int, error) {
 	n := len(p)
-	r.broadcast <- p
+	b := make([]byte, len(p))
+	copy(b, p)
+	r.broadcast <- b
 	return n, nil
 }
 
