@@ -41,5 +41,5 @@ func Example() {
 
 	results, err := myCommandCenter.Call(name, arg1, arg2)
 	fmt.Println(results, err)
-	// OUTPUT: [30.7] <nil>
+	// OUTPUT: 30.7 <nil>
 }

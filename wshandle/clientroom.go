@@ -2,12 +2,15 @@ package wshandle
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/gorilla/websocket"
-
-	"fmt"
-	"net/http"
 )
+
+type Message struct {
+	Id   int
+	Data []byte
+}
 
 // ClientRoom handles the list of active clients, and allows messages to be
 // broadcast to all of them in a concurrency-safe way.
@@ -17,7 +20,8 @@ import (
 // Printing to the ClientRoom itself will broadcast a message to all of the
 // clients in the clientroom.
 type ClientRoom struct {
-	clientmap map[*Client]bool
+	Messages  chan Message
+	clientmap map[int]*Client
 	broadcast chan []byte
 	add       chan *Client
 	remove    chan *Client
@@ -28,7 +32,8 @@ type ClientRoom struct {
 // that manage its client list.
 func NewClientRoom() *ClientRoom {
 	room := &ClientRoom{
-		clientmap: map[*Client]bool{},
+		Messages:  make(chan Message),
+		clientmap: map[int]*Client{},
 		broadcast: make(chan []byte),
 		add:       make(chan *Client),
 		remove:    make(chan *Client),
@@ -42,23 +47,23 @@ func (r *ClientRoom) run() {
 	for {
 		select {
 		case client := <-r.add:
-			r.clientmap[client] = true
+			r.clientmap[client.Id] = client
 			log.Println("client added:", client)
 
 		case client := <-r.remove:
-			delete(r.clientmap, client)
+			delete(r.clientmap, client.Id)
 			log.Println("client removed:", client)
 
 		case message := <-r.broadcast:
 			log.Printf("broadcasting: %s", message)
-			for client := range r.clientmap {
+			for _, client := range r.clientmap {
 				select {
 				case client.send <- message:
 					// message was successfully sent. continue.
 				default:
 					// something's wrong.  close connection.
 					close(client.send)
-					delete(r.clientmap, client)
+					delete(r.clientmap, client.Id)
 				}
 			}
 		}
@@ -85,7 +90,7 @@ func (room *ClientRoom) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintln(room, "Welcome:", r.RemoteAddr)
+	// fmt.Fprintln(room, "Welcome:", r.RemoteAddr)
 
 	client := NewClient(room, conn)
 	room.add <- client
@@ -98,4 +103,13 @@ func makeUpgrader() websocket.Upgrader {
 	return websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
+}
+
+// Client returns a reference to a client object by looking up their
+// id number.  Useful for sending messages back to the clients.  Since
+// this is basically just looking up the client in the map, it returns
+// (*Client, bool), similar to the way a map would.
+func (room *ClientRoom) Client(id int) (*Client, bool) {
+	c, ok := room.clientmap[id]
+	return c, ok
 }

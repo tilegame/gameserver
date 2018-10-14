@@ -20,6 +20,13 @@ const (
 	maxMessageSize = 512
 )
 
+var idnum = 123
+
+func nextId() int {
+	idnum++
+	return idnum
+}
+
 // Client represents a client connection, and the means of communicating
 // with that client.  Client satisfies the io.Writer interface, so you
 // can send a concurency-safe message to the client by simply using:
@@ -27,6 +34,7 @@ const (
 //  	fmt.Fprintln(exampleClient, "hello there!")
 //
 type Client struct {
+	Id   int
 	room *ClientRoom
 	conn *websocket.Conn
 	send chan []byte
@@ -54,6 +62,7 @@ func (c *Client) Write(p []byte) (int, error) {
 // and a reference to the websocket connection itself.
 func NewClient(room *ClientRoom, conn *websocket.Conn) *Client {
 	client := &Client{
+		Id:   nextId(),
 		room: room,
 		conn: conn,
 		send: make(chan []byte),
@@ -99,9 +108,15 @@ func (c *Client) readPump() {
 			}
 			break
 		}
+		
 		// Write the message to all clients in the room.
-		// TODO: change the behavior to something other than broadcast.
-		c.room.broadcast <- message
+		// c.room.broadcast <- message
+
+		// send a message down the admin channel.
+		c.room.Messages <- Message{
+			Id: c.Id,
+			Data: message,
+		}
 	}
 }
 
@@ -148,4 +163,3 @@ func (c *Client) writePump() {
 	}
 
 }
-

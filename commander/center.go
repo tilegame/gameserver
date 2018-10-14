@@ -123,12 +123,19 @@ func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
 	// call the function.
 	result := reflect.ValueOf(f).Call(argVals)
 
-	// convert the reflection types into interface{} types that
-	// the user can make use of.
-	output := make([]interface{}, len(result))
-	for i, v := range result {
-		output[i] = v.Interface()
-	}
+
+	// NOTE:
+	//
+	// This method returns multiple outputs, type []interface{}
+	// output := make([]interface{}, len(result))
+	
+	// for i, v := range result {
+	// 	output[i] = v.Interface()
+	// }
+
+	// This method returns a single result, even if there are more.
+	output := result[0].Interface()
+	
 	return output, nil 
 }
 
