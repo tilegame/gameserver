@@ -29,7 +29,7 @@ func gimmeTrue() bool {
 // Creating the Actual Command Center
 // __________________________________________________
 
-var center = CommandCenter{map[string]interface{}{
+var center = Center{map[string]interface{}{
 	"Command1":  command1,
 	"Command2":  command2,
 	"GimmeTrue": gimmeTrue,
@@ -46,9 +46,9 @@ type ex struct {
 }
 
 var cases = []ex{
-	ex{`{"Name": "Command1", "Params": ["hello world!", 54]}`, true},
-	ex{`{"Name": "Command1", "Params": [123, 123]}`, false},
-	ex{`{"Name": "GimmeTrue", "Params": []}`, false},
+	ex{`{"Name": "Command1", "Args": ["hello world!", 54]}`, true},
+	ex{`{"Name": "Command1", "Args": [123, 123]}`, false},
+	ex{`{"Name": "GimmeTrue", "Args": []}`, false},
 }
 
 // ==================================================
@@ -67,7 +67,7 @@ func TestFuncMap(t *testing.T) {
 }
 
 // func TestSingleExample(t *testing.T) {
-// 	message := []byte{`{"Name":"Command1", "Params":["hello", 123]}`}
+// 	message := []byte{`{"Name":"Command1", "Args":["hello", 123]}`}
 // 	cmd := new(Command)
 // 	json.Unmarshal(message, cmd)
 // }
@@ -87,7 +87,7 @@ func TestCases(t *testing.T) {
 
 		t.Logf("Command: %s \n", f)
 
-		result, err := center.Call(f)
+		result, err := center.CallWithCommand(f)
 		r.Result = result
 
 		if err != nil {

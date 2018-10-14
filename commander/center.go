@@ -3,12 +3,18 @@ package commander
 import (
 	"fmt"
 	"reflect"
+	"encoding/json"
 )
 
 const (
 	errTypeMismatch = `ParameterTypeError: %v; Got: %v; Expected: %v;`
 	errNotExist     = `Command %v Not Found.`
+	errNotFunction = `The command %v is not a function.`
 )
+
+func errTypes(name, got, expect interface{}) error {
+	return fmt.Errorf(errTypeMismatch, name, got, expect)
+}
 
 // Response is the structure of output from the called function.  If
 // the call was successful, Error == nil, and the Result is an array
@@ -24,78 +30,113 @@ type Response struct {
 // typed-checked at runtime.
 type Command struct {
 	Name   string
-	Params []interface{}
+	Args  []interface{}
 }
 
-// CommandCenter contains a Map[string]interface{}, which maps a
+// Center contains a Map[string]interface{}, which maps a
 // (Function Name) to its (Function).  This enables a valid 'Command' to
 // lookup the function by name.
 //
 // When Creating a CommandCenter, make sure to create the map.
 // Otherwise, using the method Call() will always return the error
 // "Command Doesn't Exist".
-type CommandCenter struct {
+type Center struct {
 	FuncMap map[string]interface{}
 }
 
-// Call uses the given 'Command' to lookup a function in the
-// 'CommandCenter.FuncMap'.  If it exists, and all of the argument
-// types match the parameters, then the function will be called.
-func (center *CommandCenter) Call(c *Command) (interface{}, error) {
+// CallWithCommand is the same as Call, but using the predefined
+// Command data structure.
+func (c *Center) CallWithCommand(cmd *Command) (interface{}, error) {
+	return c.Call(cmd.Name, cmd.Args...)
+}
 
-	// see if the command functions exists.
-	f, ok := center.FuncMap[c.Name]
+// CallWithJson attempts to call the function using a JSON object that
+// contains Name and Args.  The Structure will match the Command
+// structure.
+func (c *Center) CallWithJson(b []byte) (interface{}, error) {
+	cmd := &Command{}
+	err := json.Unmarshal(b, cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.Call(cmd.Name, cmd.Args...)
+}
+
+// CallFromStrings calls a function in the Command Center using an
+// array of strings as arguments for the function.
+func (c *Center) CallWithStrings(name string, args []string) (interface{}, error) {
+	a := ""
+	last := len(args)-1
+	for i, v := range(args) {
+		if i == last {
+			a += v
+			break
+		}
+		a += v + ","
+	}
+	v := fmt.Sprintf(`{"Name":"%s","Args":[%s]}`, name, a)
+	return c.CallWithJson([]byte(v))
+}
+
+// Call attempts to call the function <name>(<args>...) and does type
+// checks to confirm that it can be done.
+func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
+	
+	// check if function <name> exists.
+	f, ok := c.FuncMap[name]
 	if !ok {
-		return nil, fmt.Errorf(errNotExist, c.Name)
+		return nil, fmt.Errorf(errNotExist, name)
 	}
 
-	// convert to the reflection type
-	fr := reflect.ValueOf(f)
+	// retrieve the reflection type of the target function.
+	t := reflect.TypeOf(f)
 
-	// gather up the parameters types.
-	var list []reflect.Type
-	var args []reflect.Value
-
-	for _, p := range c.Params {
-		list = append(list, reflect.TypeOf(p))
-		args = append(args, reflect.ValueOf(p))
+	// confirm that the target is a callable function.
+	if t.Kind() != reflect.Func {
+		return nil, fmt.Errorf(errNotFunction, name)
 	}
 
-	//  We only want to compare the parameters, not its output.
-	//  From the real command, create a list of parameter types.
-	realtype := reflect.TypeOf(f)
-	n := realtype.NumIn()
-	expectedList := make([]reflect.Type, n)
-
-	for i := 0; i < n; i++ {
-		expectedList[i] = realtype.In(i)
+	// retrieve parameter types from target function.
+	var paramTypes []reflect.Type
+	for i := 0; i < t.NumIn(); i++ {
+		paramTypes = append(paramTypes, t.In(i))
+	}
+	
+	// retieve argument types (and values) from the user's call.
+	var argTypes []reflect.Type
+	var argVals []reflect.Value
+	for _, v := range args {
+		argTypes = append(argTypes, reflect.TypeOf(v))
+		argVals = append(argVals, reflect.ValueOf(v))
 	}
 
-	// Create "function types" that can be compared to each other.
-	// Doing the comparison like this allows for more helpful
-	// error messages that can be sent back to the user.
-	ftype := reflect.FuncOf(list, nil, false)
-	rtype := reflect.FuncOf(expectedList, nil, false)
-
-	if rtype != ftype {
-		return nil, fmt.Errorf(errTypeMismatch, c.Name, ftype, realtype)
+	// compare arguments to parameters.
+	if len(argTypes) != len(paramTypes) {
+		return nil, errTypes(name, argTypes, paramTypes)
+	}
+	for i:=0; i<len(paramTypes); i++ {
+		if paramTypes[i] != argTypes[i] {
+			return nil, errTypes(name, argTypes, paramTypes)
+		}
 	}
 
-	// If we get this far, then the arguments and parameters
-	// match, and the function can be safely called.
-	result := fr.Call(args)
+	// call the function.
+	result := reflect.ValueOf(f).Call(argVals)
+
+	// convert the reflection types into interface{} types that
+	// the user can make use of.
 	output := make([]interface{}, len(result))
 	for i, v := range result {
 		output[i] = v.Interface()
 	}
-	return output, nil
+	return output, nil 
 }
 
 func (c *Command) String() string {
 	s := c.Name
 	s += "("
-	lastIndex := len(c.Params) - 1
-	for i, v := range c.Params {
+	lastIndex := len(c.Args) - 1
+	for i, v := range c.Args {
 		s += fmt.Sprintf("%#v", v)
 		if i != lastIndex {
 			s += ", "

@@ -1,7 +1,6 @@
 package commander_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/fractalbach/ninjaServer/commander"
 )
@@ -10,12 +9,8 @@ import (
 // Start with some functions.
 // __________________________________________________
 
-func a(f float64) bool {
-	return true
-}
-
-func b(s string) (string, float64) {
-	return "hello", 3.14
+func sum(f1 float64, f2 float64) float64 {
+	return f1 + f2
 }
 
 // ==================================================
@@ -27,34 +22,24 @@ func b(s string) (string, float64) {
 // the right side, is the actual function that is called.
 
 var functionMap = map[string]interface{}{
-	"alwaysTrue": a,
-	"sayHello":   b,
+	"sum": sum,
 }
 
-var myCommandCenter = commander.CommandCenter{
+var myCommandCenter = commander.Center{
 	FuncMap: functionMap,
 }
 
 // ==================================================
-//  Call a Command From JSON
+//  Call a Command
 // __________________________________________________
 
-// In this example, a JSON message (probably originating from a
-// network conection), is converted into the type Command.  This
-// command is called by the CommandCenter, which produces the result.
-
-var message = []byte(`{"Name":"sayHello", "Params":["ohai"]}`)
-
 func Example() {
-	
-	cmd := new(commander.Command)
-	json.Unmarshal(message, cmd)
-	result, err := myCommandCenter.Call(cmd)
-	resp := commander.Response{
-		Result: result,
-		Error: err,
-	}
-	output, _ := json.Marshal(resp)
-	fmt.Println(string(output))
-	// OUTPUT: {"Result":["hello",3.14],"Error":null}
+
+	name := "sum"
+	arg1 := 10.5
+	arg2 := 20.2
+
+	results, err := myCommandCenter.Call(name, arg1, arg2)
+	fmt.Println(results, err)
+	// OUTPUT: [30.7] <nil>
 }
