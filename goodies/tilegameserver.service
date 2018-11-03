@@ -1,0 +1,12 @@
+[Unit]
+Description=Tile Game Server
+Documentation=https://github.com/tilegame/gameserver
+After=networking.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/fractalbach/ninjaArena/web
+ExecStart=/home/fractalbach/go/bin/gameserver -a :80 -tls
+
+[Install]
+WantedBy=multi-user.target

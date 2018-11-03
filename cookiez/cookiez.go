@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/fractalbach/fractalnet/namegen"
-	"github.com/fractalbach/ninjaServer/cookiez/registrar"
 	"github.com/gorilla/securecookie"
+	"github.com/tilegame/gameserver/cookiez/registrar"
 )
 
 const (
@@ -40,7 +40,7 @@ TimeLeft: %s
 `
 
 var (
-	reg = registrar.NewRegistrar()
+	reg    = registrar.NewRegistrar()
 	s      = gimmeCookie()
 	idIter = 123
 )
@@ -144,7 +144,6 @@ func ServeCookies(w http.ResponseWriter, r *http.Request) {
 	}
 	readCookieHandler(w, r)
 }
-
 
 // HandleInfo displays the information about the registrar created by
 // this cookie handler.

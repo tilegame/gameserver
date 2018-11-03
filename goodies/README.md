@@ -13,8 +13,13 @@ Updating the Server
 
 Until an fully automated system is in place, there are a couple of steps
 to run in the shell to fetch updates from github, reload the service modules,
-and get the new version of the server online. Currently, it's very un-sophisicated.
+and get the new version of the server online. Currently, it's very un-sophisicated, 
+but it works.
 
+
+Note:
+* The name of binary file is `gameserver`
+* The name of the systemctl service is `tilegameserver`
 
 
 ### When Server Code has changed
@@ -22,17 +27,17 @@ and get the new version of the server online. Currently, it's very un-sophisicat
 To fetch new changes to the repo, re-install the server software, and then
 restart the servers:
 
-	go get -u github.com/fractalbach/ninjaServer
-	sudo systemctl restart ninjaServer
+	go get -u github.com/tilegame/gameserver
+	sudo systemctl restart tilegameserver
 	
 	
 	
-### When ninjaServer.service has changed
+### When tilegameserver.service has changed
 	
 When the .service module for systemctl is changed, do this instead:
 
-	go get -u github.com/fractalbach/ninjaServer
-	cd ~/go/src/github.com/fractalbach/ninjaServer/goodies
+	go get -u github.com/tilegame/gameserver
+	cd ~/go/src/github.com/tilegame/gameserver/goodies
 	chmod u=rx UpdateService.sh
 	./UpdateService.sh
 
@@ -44,11 +49,27 @@ the right location, and restart the daemon.
 Future Goals
 ------------
 
+* be able to initialize a fresh VM automatically
+
+* be portable to different environments (so that you don't always need a VM)
+	* docker, perhaps?
+	* various cloud platforms
+
+* run the service in its own user group 
+	* create user group if it doesn't exist.
+	* use the existing user if it does.
+
+* rewrite bash scripts into golang so there is a more unified "tile game server tool".
+
+
+
 Ideally, this should be entirely automated, and should minimize the
 usage of bash scripts as much as possible.  Updating a specific branch
 of the repo should trigger the update process.
 
 One possibility is to a program that handles the graceful startup and shutdown
-of the various components of the ninjaServer.  At the time of this writing,
+of the various components of the tile game server.  At the time of this writing,
 there aren't enough components in existence for this to matter.
 But when there are, it would be wise to have something able to manage them.
+
+

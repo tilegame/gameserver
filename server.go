@@ -1,4 +1,4 @@
-/*command ninjaServer starts up and controls the endpoints for the backend.
+/*command gameserver starts up and controls the endpoints for the backend.
  */
 package main
 
@@ -14,9 +14,9 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/fractalbach/ninjaServer/cookiez"
-	"github.com/fractalbach/ninjaServer/echoserver"
-	"github.com/fractalbach/ninjaServer/wshandle"
+	"github.com/tilegame/gameserver/cookiez"
+	"github.com/tilegame/gameserver/echoserver"
+	"github.com/tilegame/gameserver/wshandle"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -26,12 +26,12 @@ const HelpMessage = `
 The Ninja Arena Server!
 
 USAGE:    
-  ninjaServer [options]
+  gameserver [options]
 
 EXAMPLES:
-  ninjaServer -a localhost:8080
-  ninjaServer -a=localhost:8080
-  ninjaServer -a :http -tls
+  gameserver -a localhost:8080
+  gameserver -a=localhost:8080
+  gameserver -a :http -tls
 
 INFORMATION:
 

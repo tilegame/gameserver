@@ -1,11 +1,11 @@
-# Ninja Server
+# Tile Game Server
 
-[![Build Status](https://travis-ci.org/fractalbach/ninjaServer.svg?branch=master)](https://travis-ci.org/fractalbach/ninjaServer)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fractalbach/ninjaServer)](https://goreportcard.com/report/github.com/fractalbach/ninjaServer)
-[![GoDoc](https://godoc.org/github.com/fractalbach/ninjaServer?status.svg)](https://godoc.org/github.com/fractalbach/ninjaServer)
+Repository for the tile game server.
 
-Repository for the server of the [Tile Experiments Project](https://github.com/fractalbach/TileExperiments)
-(Still in early development).
+[![Build Status](https://travis-ci.org/tilegame/gameserver.svg?branch=master)](https://travis-ci.org/tilegame/gameserver)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tilegame/gameserver)](https://goreportcard.com/report/github.com/tilegame/gameserver)
+[![GoDoc](https://godoc.org/github.com/tilegame/gameserver?status.svg)](https://godoc.org/github.com/tilegame/gameserver)
+
 
 
 ## Endpoints
@@ -19,8 +19,9 @@ wss://thebachend.com/ws/echo | Live | Where the game currently is.
 
 
 
-## Credits 
+## Made With
 
+- [The Go Programming Language](https://golang.org/).
 - [Google Cloud's Compute Engine](https://cloud.google.com/compute/) for hosting the server.
 - [Let's Encrypt](https://letsencrypt.org/) for the automatic free SSL/TLS Certificates
 - [Gorilla web toolkit](http://www.gorillatoolkit.org/) for it's [gorilla/websocket](https://github.com/gorilla/websocket/) package.

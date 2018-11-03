@@ -1,8 +1,8 @@
 #!/bin/bash
 
-ServiceName=ninjaServer.service
+ServiceName=tilegameserver.service
 
-# This script should be run while in the same directory as "ninjaServer.service"
+# This script should be run while in the same directory as "tilegameserver.service"
 # if you are intending to update it.
 sudo cp "$ServiceName" /etc/systemd/system/"$ServiceName"
 

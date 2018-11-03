@@ -2,7 +2,7 @@ package commander_test
 
 import (
 	"fmt"
-	"github.com/fractalbach/ninjaServer/commander"
+	"github.com/tilegame/gameserver/commander"
 )
 
 // ==================================================

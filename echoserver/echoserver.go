@@ -4,12 +4,11 @@ package echoserver
 import (
 	"encoding/json"
 	"fmt"
-	"time"
-	//"github.com/fractalbach/ninjaServer/gamestate"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var upgrader = websocket.Upgrader{
@@ -22,7 +21,7 @@ type client struct {
 
 type ActiveClientStore struct {
 	clientmap map[*client]bool
-	mux sync.Mutex
+	mux       sync.Mutex
 }
 
 var clientlist = map[*client]bool{}
@@ -33,7 +32,7 @@ func broadcast(data []byte) {
 	}
 }
 
-// HandleWs is called by ninjaServer.go and converts all received
+// HandleWs is called by gameserver.go and converts all received
 // messages into uppercase, and sends it back to the original source.
 func HandleWs(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -306,7 +305,7 @@ func doChatCmd(params []interface{}, out *ResultMessage) {
 	if _, ok := playerlist[name]; !ok {
 		out.Error = "player does not exist."
 		return
-	}	
+	}
 	msgtoall := ResultMessage{
 		Kind: "chat",
 		Result: map[string]string{
