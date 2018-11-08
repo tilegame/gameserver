@@ -1,4 +1,4 @@
-/* 
+/*
 wshandle implements the HTTP/WebSockets handler for player connections.
 
 
@@ -8,11 +8,11 @@ wshandle implements the HTTP/WebSockets handler for player connections.
 Websocket Handler
 
 All players use this websocket handler while logged into the game.
-It is similar to a chatroom, and is heavily based on the example from: 
+It is similar to a chatroom, and is heavily based on the example from:
 https://github.com/gorilla/websocket/tree/master/examples/chat
 
 
-To use this on the server, use the HTTP handler, which satisfies the 
+To use this on the server, use the HTTP handler, which satisfies the
 http.HandlerFunc interface.
 	wshandle.Handle
 
@@ -44,7 +44,7 @@ and importing gorilla/websockets should _only_ be done in this package.
 
 	TODO:
 	- List active clients.
-	- Match Client with PlayerSessions 
+	- Match Client with PlayerSessions
 	- Send incoming messages to GameCommandCenter
 	- make it obvious what the main ClientRoom object is called, and how
 	  it will be publicly accessible from the rest of the game.

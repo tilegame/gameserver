@@ -1,15 +1,15 @@
 package commander
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
-	"encoding/json"
 )
 
 const (
 	errTypeMismatch = `ParameterTypeError: %v; Got: %v; Expected: %v;`
 	errNotExist     = `Command %v Not Found.`
-	errNotFunction = `The command %v is not a function.`
+	errNotFunction  = `The command %v is not a function.`
 )
 
 func errTypes(name, got, expect interface{}) error {
@@ -29,8 +29,8 @@ type Response struct {
 // Command is the structure of a callable command.  The Arguments are
 // typed-checked at runtime.
 type Command struct {
-	Name   string
-	Args  []interface{}
+	Name string
+	Args []interface{}
 }
 
 // Center contains a Map[string]interface{}, which maps a
@@ -66,8 +66,8 @@ func (c *Center) CallWithJson(b []byte) (interface{}, error) {
 // array of strings as arguments for the function.
 func (c *Center) CallWithStrings(name string, args []string) (interface{}, error) {
 	a := ""
-	last := len(args)-1
-	for i, v := range(args) {
+	last := len(args) - 1
+	for i, v := range args {
 		if i == last {
 			a += v
 			break
@@ -81,7 +81,7 @@ func (c *Center) CallWithStrings(name string, args []string) (interface{}, error
 // Call attempts to call the function <name>(<args>...) and does type
 // checks to confirm that it can be done.
 func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
-	
+
 	// check if function <name> exists.
 	f, ok := c.FuncMap[name]
 	if !ok {
@@ -101,7 +101,7 @@ func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
 	for i := 0; i < t.NumIn(); i++ {
 		paramTypes = append(paramTypes, t.In(i))
 	}
-	
+
 	// retieve argument types (and values) from the user's call.
 	var argTypes []reflect.Type
 	var argVals []reflect.Value
@@ -114,7 +114,7 @@ func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
 	if len(argTypes) != len(paramTypes) {
 		return nil, errTypes(name, argTypes, paramTypes)
 	}
-	for i:=0; i<len(paramTypes); i++ {
+	for i := 0; i < len(paramTypes); i++ {
 		if paramTypes[i] != argTypes[i] {
 			return nil, errTypes(name, argTypes, paramTypes)
 		}
@@ -123,20 +123,19 @@ func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
 	// call the function.
 	result := reflect.ValueOf(f).Call(argVals)
 
-
 	// NOTE:
 	//
 	// This method returns multiple outputs, type []interface{}
 	// output := make([]interface{}, len(result))
-	
+
 	// for i, v := range result {
 	// 	output[i] = v.Interface()
 	// }
 
 	// This method returns a single result, even if there are more.
 	output := result[0].Interface()
-	
-	return output, nil 
+
+	return output, nil
 }
 
 func (c *Command) String() string {

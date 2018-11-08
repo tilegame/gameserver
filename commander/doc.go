@@ -1,4 +1,4 @@
-/* 
+/*
 Package commander enables functions to be called from data structures
 that contain the function's name and a list of arguments.
 

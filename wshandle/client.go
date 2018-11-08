@@ -108,13 +108,13 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		
+
 		// Write the message to all clients in the room.
 		// c.room.broadcast <- message
 
 		// send a message down the admin channel.
 		c.room.Messages <- Message{
-			Id: c.Id,
+			Id:   c.Id,
 			Data: message,
 		}
 	}

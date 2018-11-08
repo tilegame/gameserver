@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-
-
 /*
 
 TODO
@@ -15,17 +13,15 @@ TODO
 
 */
 
-
 const expireDuration = 100 * time.Millisecond
 
 var (
 	name       = "testUser123"
 	token      = []byte("arbitrary sequence of bytes.")
 	expiration = time.Now().Add(expireDuration)
-	user = User{name, token}
-	session = UserSession{user, expiration}
+	user       = User{name, token}
+	session    = UserSession{user, expiration}
 )
-
 
 // Test the most simplistic form of the APIs.
 func TestBasicAPI(t *testing.T) {

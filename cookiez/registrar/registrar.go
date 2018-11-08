@@ -217,7 +217,7 @@ func (r *Registrar) GenerateInfo() *Info {
 // active sesions
 func (r *Registrar) HandleInfo(w http.ResponseWriter, req *http.Request) {
 	msg, err := json.MarshalIndent(r.GenerateInfo(), "", "\t")
-	
+
 	if err != nil {
 		log.Println("Registrar:", err)
 		fmt.Fprint(w, "error generating registrar info")

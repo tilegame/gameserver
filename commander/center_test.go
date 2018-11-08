@@ -35,7 +35,6 @@ var center = Center{map[string]interface{}{
 	"GimmeTrue": gimmeTrue,
 }}
 
-
 // ==================================================
 // Example Cases
 // __________________________________________________
