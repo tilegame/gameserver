@@ -3,6 +3,7 @@ package commander
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
 )
 
@@ -82,16 +83,18 @@ func (c *Center) CallWithStrings(name string, args []string) (interface{}, error
 // checks to confirm that it can be done.
 func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
 
-	// check if function <name> exists.
+	// Retrieve the func:<name> from the map.
 	f, ok := c.FuncMap[name]
+
+	// check if func:<name> exists.
 	if !ok {
 		return nil, fmt.Errorf(errNotExist, name)
 	}
 
-	// retrieve the reflection type of the target function.
+	// retrieve the reflection of the func.
 	t := reflect.TypeOf(f)
 
-	// confirm that the target is a callable function.
+	// confirm that it is a callable func.
 	if t.Kind() != reflect.Func {
 		return nil, fmt.Errorf(errNotFunction, name)
 	}
@@ -110,11 +113,18 @@ func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
 		argVals = append(argVals, reflect.ValueOf(v))
 	}
 
-	// compare arguments to parameters.
+	// compare number of args to params.
 	if len(argTypes) != len(paramTypes) {
 		return nil, errTypes(name, argTypes, paramTypes)
 	}
+
+	// compare argument and parameter types.
 	for i := 0; i < len(paramTypes); i++ {
+		// case:  floating point --> integer conversion.
+		if checkFloatToInt(argTypes[i], paramTypes[i], argVals[i]) {
+			argVals[i] = reflect.ValueOf(int(argVals[i].Float()))
+			continue
+		}
 		if paramTypes[i] != argTypes[i] {
 			return nil, errTypes(name, argTypes, paramTypes)
 		}
@@ -136,6 +146,25 @@ func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
 	output := result[0].Interface()
 
 	return output, nil
+}
+
+// converts the reflection of a float into a integer if that number is
+// the same.  For example, float(9) converts to int(9), but float(9.1)
+// must remain a float.
+func checkFloatToInt(argT, paramT reflect.Type, argV reflect.Value) bool {
+
+	// Confirm that (arg, param) are in (Float, Int)
+	// If they aren't, then return immediately.
+	if !(argT.Kind() == reflect.Float64 && paramT.Kind() == reflect.Int) {
+		return false
+	}
+
+	// If a floating point equals its floor, then it's an integer.
+	if math.Floor(argV.Float()) == argV.Float() {
+		return true
+	}
+
+	return false
 }
 
 func (c *Command) String() string {

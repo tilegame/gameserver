@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -21,6 +22,18 @@ func command2(s string, i int) string {
 	return out
 }
 
+func add(a, b int) int {
+	return a + b
+}
+
+func multInt(a, b int) int {
+	return a * b
+}
+
+func multFloat(a, b float64) float64 {
+	return a * b
+}
+
 func gimmeTrue() bool {
 	return true
 }
@@ -33,6 +46,9 @@ var center = Center{map[string]interface{}{
 	"Command1":  command1,
 	"Command2":  command2,
 	"GimmeTrue": gimmeTrue,
+	"Add":       add,
+	"multInt":   multInt,
+	"multFloat": multFloat,
 }}
 
 // ==================================================
@@ -102,5 +118,52 @@ func TestCases(t *testing.T) {
 		}
 
 		t.Logf("Result:\n%s\n", b)
+	}
+}
+
+func TestStrings(t *testing.T) {
+
+	cases := []struct {
+		in  string
+		out string
+		ok  bool
+	}{
+		{"multInt 10 12", "120", true},
+		{"multInt 10 1", "10", true},
+		{"multInt 10 1.1", "", false},
+		{"multInt 10", "", false},
+		{"multInt 1.1 1.1", "", false},
+		{"multInt ", "", false},
+		{"multFloat 10 10", "100", true},
+		{"multFloat 10.0 10.1", "101", true},
+	}
+
+	for _, c := range cases {
+		arr := strings.Split(c.in, " ")
+		name, args := arr[0], arr[1:]
+		val, err := center.CallWithStrings(name, args)
+
+		if (err != nil) && (c.ok) {
+			t.Errorf("Command String:(%v) Expected Error, but got (%v)",
+				c.in, err)
+			continue
+		}
+		if (err == nil) && (!c.ok) {
+			t.Errorf("Command String Got an Unexpected Error: %v", c.in)
+			continue
+		}
+
+		if (err != nil) && (!c.ok) {
+			// All good.  We expected an error for this case.
+			continue
+		}
+
+		result := fmt.Sprint(val)
+		if result != c.out {
+			t.Errorf("Command String Failed:(%s) Expected:(%v), Got:(%v)",
+				c.in, result, c.out)
+			continue
+		}
+
 	}
 }
