@@ -51,34 +51,6 @@ func (c *Center) CallWithCommand(cmd *Command) (interface{}, error) {
 	return c.Call(cmd.Name, cmd.Args...)
 }
 
-// CallWithJson attempts to call the function using a JSON object that
-// contains Name and Args.  The Structure will match the Command
-// structure.
-func (c *Center) CallWithJson(b []byte) (interface{}, error) {
-	cmd := &Command{}
-	err := json.Unmarshal(b, cmd)
-	if err != nil {
-		return nil, err
-	}
-	return c.Call(cmd.Name, cmd.Args...)
-}
-
-// CallFromStrings calls a function in the Command Center using an
-// array of strings as arguments for the function.
-func (c *Center) CallWithStrings(name string, args []string) (interface{}, error) {
-	a := ""
-	last := len(args) - 1
-	for i, v := range args {
-		if i == last {
-			a += v
-			break
-		}
-		a += v + ","
-	}
-	v := fmt.Sprintf(`{"Name":"%s","Args":[%s]}`, name, a)
-	return c.CallWithJson([]byte(v))
-}
-
 // Call attempts to call the function <name>(<args>...) and does type
 // checks to confirm that it can be done.
 func (c *Center) Call(name string, args ...interface{}) (interface{}, error) {
@@ -179,4 +151,58 @@ func (c *Command) String() string {
 	}
 	s += ")"
 	return s
+}
+
+// ------------------------------------------------------------------
+// Additional Ways to Call.  Here for Convenience.
+// ------------------------------------------------------------------
+
+// CallWithJson attempts to call the function using a JSON object that
+// contains Name and Args.  The Structure will match the Command
+// structure.
+func (c *Center) CallWithJson(b []byte) (interface{}, error) {
+	cmd := &Command{}
+	err := json.Unmarshal(b, cmd)
+	if err != nil {
+		return nil, fmt.Errorf("JSON syntax error.")
+	}
+	return c.Call(cmd.Name, cmd.Args...)
+}
+
+// CallFromStrings calls a function in the Command Center using an
+// array of strings as arguments for the function.
+func (c *Center) CallWithStrings(name string, args []string) (interface{}, error) {
+	a := ""
+	last := len(args) - 1
+	for i, v := range args {
+		if i == last {
+			a += v
+			break
+		}
+		a += v + ","
+	}
+	v := fmt.Sprintf(`{"Name":"%s","Args":[%s]}`, name, a)
+	return c.CallWithJson([]byte(v))
+}
+
+// CallWithFunctionParser parses a string based on the function
+// syntax: functionName(arg1, arg2, ...) and uses the result to
+// call the function.  Whitespace is removed entirely from the input
+// string.  Trailing commas within the list of arguments are optional
+// because they are removed.
+//
+// Arguments are treated as JSON values, so they follow the JSON
+// encoding definitions.  If an error comes back as
+// "Caller: JSON syntax error", it is most likely because one of the
+// arguments is improperly formatted.
+func (c *Center) CallWithFunctionString(s string) (interface{}, error) {
+	name, args, err := parseFunctionSyntax(s)
+	if err != nil {
+		return "", fmt.Errorf("Parser: %v", err)
+	}
+	result, err := c.CallWithStrings(name, args)
+	if err != nil {
+		return "", fmt.Errorf("Caller: %v", err)
+	}
+	return result, nil
 }

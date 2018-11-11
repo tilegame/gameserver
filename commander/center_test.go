@@ -88,19 +88,16 @@ func TestFuncMap(t *testing.T) {
 // }
 
 func TestCases(t *testing.T) {
-	for i, example := range cases {
-
+	for _, example := range cases {
+		// t.Logf("======[ Example %v ]======\n", i)
 		f := &Command{}
 		r := &Response{}
-
-		t.Logf("======[ Example %v ]======\n", i)
 
 		err := json.Unmarshal([]byte(example.s), f)
 		if err != nil {
 			t.Error(err)
 		}
-
-		t.Logf("Command: %s \n", f)
+		// t.Logf("Command: %s \n", f)
 
 		result, err := center.CallWithCommand(f)
 		r.Result = result
@@ -112,12 +109,11 @@ func TestCases(t *testing.T) {
 			r.Error = err.Error()
 		}
 
-		b, err := json.MarshalIndent(r, "", "\t")
+		_, err = json.MarshalIndent(r, "", "\t")
 		if err != nil {
 			t.Error(err)
 		}
-
-		t.Logf("Result:\n%s\n", b)
+		// t.Logf("Result:\n%s\n", b)
 	}
 }
 

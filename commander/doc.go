@@ -1,27 +1,64 @@
 /*
-Package commander enables functions to be called from data structures
-that contain the function's name and a list of arguments.
+Package commander enables dynamic function calls using strings.
 
 
 Motivation
 
-The motivation for writing this package was to allow user-accessible
-functions to be written more easily.  The main use-case is to call a
-function with a JSON message.  The JSON provides the Function's Name,
-and the Arguments for that function.  It's very similar to JSON-RPC.
+The motivation for this package was to make it easier to dynamically
+call functions using only a string.
 
-In the context of the game: Let's say another function needs to be
-added.  Instead of re-writing a bunch of boilerplate code that
-type-checks the incoming JSON messages, the newly written function can
-be added to the CommandCenter's Function Map.
+I started by writing insane switch statements based on incoming JSON
+messages. This worked well at first, but because tedious to upkeep:
+every time I wanted to write a new function, I had to write tons of
+boilerplate type checking and validating.
+
+Future experiments involved making a lot of types, and marshalling
+JSON messages into those types.
+This was well organized and let the encoding/json package deal with
+type checking, but it was still tedious for adding new functions.
+
+I look at code generators to turn functions into APIs.
+Some of these  become too "magical", and seemed annoying to maintain.
+RPC systems seem like overkill.
+I just wanted to throw in a string and get the result.
+
+Thus, I wrote this package.
+String goes in; Result or Error comes out.
 
 
-How it Works
 
-Reflection is used to analyze the function (which has been written in
-Go).  When passed arguments of unknown types (like the JSON message
-from a player), the command center handles common error messages such
-as "Parameter Type Mismatch" or "Command Not Found".
+
+Philosophy
+
+From most important to least important:
+	1. Easy to Use.         <- literally the whole point.
+	2. Easy to Understand   <- the design is simple.
+	3. Easy to Build Over   <- can be used as a foundation.
+I want to keep this "magic-free".  It shouldn't feel like tons of
+things are happening under the hood.  Basically all it does is do
+some type-checking on a string, and call a function with it.
+
+
+
+
+Current Status
+
+Still a work in progress, but I'm quickly started to enjoy this
+package a lot.  It's simple, it makes use of meta-programming,
+and it doesn't contain tons of "magic".
+
+	1. Type Commander is literally just a map.
+	2. Commander.Call() is the only function that you need.
+	3. The other methods "CallWith..." are for convenience.
+
+
+
+Future Goals
+
+	- support more kinds of functions.
+	- allow multiple returns.
+	- Support different encodings (not just JSON).
+
 
 */
 package commander
