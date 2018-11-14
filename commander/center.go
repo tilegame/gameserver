@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strings"
 )
 
 const (
@@ -205,4 +206,18 @@ func (c *Center) CallWithFunctionString(s string) (interface{}, error) {
 		return "", fmt.Errorf("Caller: %v", err)
 	}
 	return result, nil
+}
+
+// HelpMessage produces a string containing a human-readable
+// description of the function names and parameter types.  The
+// functions included in the help message are generated from those in
+// the command center's function map.
+func (c *Center) HelpMessage() string {
+	message := `List of Implemented Functions:`
+	for k, v := range c.FuncMap {
+		s := fmt.Sprint(reflect.TypeOf(v))
+		s = strings.Replace(s, "func", k, 1)
+		message += fmt.Sprint("\n\t", s)
+	}
+	return message
 }
