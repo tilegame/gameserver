@@ -213,7 +213,7 @@ func (c *Center) CallWithFunctionString(s string) (interface{}, error) {
 // functions included in the help message are generated from those in
 // the command center's function map.
 func (c *Center) HelpMessage() string {
-	message := `List of Implemented Functions:`
+	message := ""
 	for k, v := range c.FuncMap {
 		s := fmt.Sprint(reflect.TypeOf(v))
 		s = strings.Replace(s, "func", k, 1)
