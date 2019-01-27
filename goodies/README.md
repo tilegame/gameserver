@@ -83,13 +83,21 @@ for more information about what to do after installing docker.
 
 ### Run the server
 
-Downloads and runs the latest image from
-https://hub.docker.com/r/synach/gameserver
+Running the server does a few things:
 
-	docker run -d -p 443:443 synach/gameserver:latest
+- 	Stop and remove the current container
+- 	Download latest from https://hub.docker.com/r/synach/gameserver
+-	Start the new server.
+
+~~~bash
+docker rm -f live-gameserver
+docker pull synach/gameserver:latest
+docker run -d -p 443:443 -p 80:80 \
+	--name live-gameserver \
+	synach/gameserver:latest
+~~~
 
 
-	
 ### Start Docker on Boot
 
 More info:  https://docs.docker.com/install/linux/linux-postinstall/#configure-docker-to-start-on-boot
