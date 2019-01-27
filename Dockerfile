@@ -11,6 +11,6 @@ RUN go install -v ./...
 
 # ENV PORT 8080
 
-CMD ["gameserver", "-a", ":8080"]
+CMD ["gameserver", "-a", ":80", "tls"]
 
-EXPOSE 8080
+EXPOSE 443

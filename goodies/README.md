@@ -56,7 +56,7 @@ and easier to add different parts (like databases).
 There may be a need to do the `systemctl` for running docker.
 
 
-### 1. Download and Install Docker from Terminal
+### Download and Install Docker from Terminal
 
 There's an easy install script at https://github.com/docker/docker-install
 
@@ -80,16 +80,21 @@ See https://docs.docker.com/install/linux/linux-postinstall/
 for more information about what to do after installing docker.
 
 
-### 2. Start Docker on Boot
+
+### Run the server
+
+Downloads and runs the latest image from
+https://hub.docker.com/r/synach/gameserver
+
+	docker run -d -p 443:443 synach/gameserver:latest
+
+
+	
+### Start Docker on Boot
 
 More info:  https://docs.docker.com/install/linux/linux-postinstall/#configure-docker-to-start-on-boot
 
 	sudo systemctl enable docker
-
-
-### 3. Get the repo code
-
-	TODO: docker pull something
 
 
 
