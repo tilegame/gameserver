@@ -92,9 +92,7 @@ Running the server does a few things:
 ~~~bash
 docker rm -f live-gameserver
 docker pull synach/gameserver:latest
-docker run -d -p 443:443 -p 80:80 \
-	--name live-gameserver \
-	synach/gameserver:latest
+docker run -d -p 443:443 -p 80:80 --name live-gameserver synach/gameserver:latest
 ~~~
 
 
