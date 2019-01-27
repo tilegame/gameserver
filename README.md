@@ -10,13 +10,14 @@ Repository for the tile game server.
 
 ## Endpoints
 
-URL | Dev Status | Description
-----|------------|---------------
-https://thebachend.com/ | Live | Shows realtime info about endpoints.
-https://thebachend.com/login | planned | Login screen; HTTP POST to get a token.
-wss://thebachend.com/ws | planned | Main websocket endpoint for the game
-wss://thebachend.com/ws/echo | Live | Where the game currently is.
-
+Endpoint	| Description
+--|--
+https://thebachend.com/     | shows realtime information about endpoints
+https://thebachend.com/cookie	    | generates and/or validates new cookies for clients
+https://thebachend.com/scoreboard	| simple scoreboard example
+https://thebachend.com/sessions	| generates a list of active sessions
+wss://thebachend.com/ws	Main    | websocket connection for game (not implemented yet)
+wss://thebachend.com/ws/echo	| echo server used for testing connection speeds
 
 
 ## Made With
