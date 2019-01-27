@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/fractalbach/highscores/boardserver"
 	"github.com/tilegame/gameserver/cookiez"
 	"github.com/tilegame/gameserver/echoserver"
 	"github.com/tilegame/gameserver/wshandle"
@@ -25,7 +26,7 @@ import (
 const HelpMessage = `
 The Ninja Arena Server!
 
-USAGE:    
+USAGE:
   gameserver [options]
 
 EXAMPLES:
@@ -82,17 +83,19 @@ var (
 )
 
 var endpoints = map[string]func(http.ResponseWriter, *http.Request){
-	"/ws":       serveWebSocket,
-	"/ws/echo":  serveWebSocketEcho,
-	"/cookie":   cookiez.ServeCookies,
-	"/sessions": cookiez.HandleInfo,
+	"/ws":         serveWebSocket,
+	"/ws/echo":    serveWebSocketEcho,
+	"/cookie":     cookiez.ServeCookies,
+	"/sessions":   cookiez.HandleInfo,
+	"/scoreboard": boardserver.Handler,
 }
 
 var endpointDescriptions = map[string]string{
-	"/ws":       "Main websocket connection for game (not implemented yet)",
-	"/ws/echo":  "echo server used for testing connection speeds",
-	"/cookie":   "generates and/or validates new cookies for clients",
-	"/sessions": "generates a list of active sessions",
+	"/ws":         "Main websocket connection for game (not implemented yet)",
+	"/ws/echo":    "echo server used for testing connection speeds",
+	"/cookie":     "generates and/or validates new cookies for clients",
+	"/sessions":   "generates a list of active sessions",
+	"/scoreboard": "simple scoreboard example",
 }
 
 var (
