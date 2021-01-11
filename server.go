@@ -23,7 +23,7 @@ import (
 // HelpMessage is the extra information given when using flags -h or --help.
 // it is prefixed to the automatically generated info by flag.PrintDefaults()
 const HelpMessage = `
-The Ninja Arena Server!
+The TileGame GameServer!
 
 USAGE:
   gameserver [options]
@@ -170,12 +170,21 @@ func runServer() {
 	for path, handler := range endpoints {
 		mux.HandleFunc(path, handler)
 	}
-	if !usingTLS {
-		s := &http.Server{Addr: addr, Handler: mux}
-		cookieServer.SetCookieSecurity(false)
-		log.Println("started server on:", s.Addr)
-		log.Fatal(s.ListenAndServe())
+	if usingTLS {
+		runServerOverTLS(mux)
+	} else {
+		runServerOverPlainHTTP(mux)
 	}
+}
+
+func runServerOverPlainHTTP(mux *http.ServeMux) {
+	s := &http.Server{Addr: addr, Handler: mux}
+	cookieServer.SetCookieSecurity(false)
+	log.Println("started server on:", s.Addr)
+	log.Fatal(s.ListenAndServe())
+}
+
+func runServerOverTLS(mux *http.ServeMux) {
 	m := &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist("thebachend.com"),
