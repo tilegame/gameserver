@@ -39,6 +39,10 @@ Token:    %x
 TimeLeft: %s
 `
 
+const invalidString = `
+
+`
+
 type cookieServer struct {
 	reg                 *registrar.Registrar
 	gorillaSecureCookie *securecookie.SecureCookie
@@ -132,13 +136,12 @@ func (c *cookieServer) setCookieHandler(w http.ResponseWriter, r *http.Request) 
 func (c *cookieServer) readCookieHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err1 := r.Cookie(mainCookieName)
 	if err1 != nil {
-		log.Println(err1)
+		c.setCookieHandler(w, r)
 		return
 	}
 	v := userData{}
 	err2 := c.gorillaSecureCookie.Decode(mainCookieName, cookie.Value, &v)
 	if err2 != nil {
-		fmt.Fprintln(w, "Invalid cookie! Here's a new one.")
 		log.Println(r.RemoteAddr, err2)
 		c.setCookieHandler(w, r)
 		return
@@ -152,8 +155,18 @@ func (c *cookieServer) readCookieHandler(w http.ResponseWriter, r *http.Request)
 		fmt.Fprintf(w, validString, v.Name, v.ID, v.Token, timeLeft)
 		return
 	}
-	fmt.Fprintln(w, "You have an invalid cookie!!")
+	c.deleteCookie(w, r)
 	return
+}
+
+func (c *cookieServer) deleteCookie(w http.ResponseWriter, r *http.Request) {
+	cookie := &http.Cookie{
+		Name:   mainCookieName,
+		Value:  "",
+		MaxAge: -1,
+	}
+	http.SetCookie(w, cookie)
+	fmt.Fprintln(w, "You had an invalid cookie, try refreshing the page.")
 }
 
 // ServeCookies is a handler for the cookie server, called by server.go, that
@@ -162,11 +175,6 @@ func (c *cookieServer) readCookieHandler(w http.ResponseWriter, r *http.Request)
 // package cookiez.  Either a new cookie will be given, or an old cookie will be
 // validated.f
 func (c *cookieServer) ServeCookies(w http.ResponseWriter, r *http.Request) {
-	_, err := r.Cookie(mainCookieName)
-	if err != nil {
-		c.setCookieHandler(w, r)
-		return
-	}
 	c.readCookieHandler(w, r)
 }
 
