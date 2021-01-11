@@ -10,6 +10,21 @@ import (
 	"time"
 )
 
+// Registrar is the main object contains a hash map to store the user
+// sessions, and several channels which allow it to be accessed
+// concurrently.
+type Registrar struct {
+	userMap map[string]savedSession
+	mutex   sync.Mutex
+}
+
+// savedSession is used internally as the "value" in the registrar,
+// where the "key" is a username string.
+type savedSession struct {
+	token      []byte
+	expiration time.Time
+}
+
 // User consists of a username and it's secret token, it can be passed
 // to the Validate() function to confirm that the username and token
 // match each other in the registrar.
@@ -42,68 +57,15 @@ type Info struct {
 	UserList       []string
 }
 
-// savedSession is used internally as the "value" in the registrar,
-// where the "key" is a username string.
-type savedSession struct {
-	token      []byte
-	expiration time.Time
-}
-
-// query is used internally, adding a sendback channel to the User
-// structure.  This enabls the registrar to send a response message
-// back with the answer "true" or "false".
-// type query struct {
-// 	User
-// 	sendback chan bool
-// }
-
-// Registrar is the main object contains a hash map to store the user
-// sessions, and several channels which allow it to be accessed
-// concurrently.
-type Registrar struct {
-	// queryChannel chan query
-	// entering     chan UserSession
-	// leaving      chan string
-	userMap map[string]savedSession
-	mutex   sync.Mutex
-}
-
 // NewRegistrar creates a new registrar instance.  Each Registrar has
 // a map that stores savedSessions, accessible via username.  The map
 // is protected by a Mutex, so all of the calls can be made
 // concurrently.
 func NewRegistrar() *Registrar {
 	return &Registrar{
-		// queryChannel: make(chan query),
-		// entering:     make(chan UserSession),
-		// leaving:      make(chan string),
 		userMap: make(map[string]savedSession),
 	}
 }
-
-// // running the registrar waits along its channels for a message.
-// // When one is received, the registrar will either add, delete, or lookup
-// // an entry.  Use this function in its own go-routine.
-// func (r *Registrar) run() {
-// 	for {
-// 		select {
-// 		case name := <-r.leaving:
-// 			delete(r.userMap, name)
-
-// 		case s := <-r.entering:
-// 			r.userMap[s.Name] = savedSession{
-// 				token:      s.Token,
-// 				expiration: s.Expiration,
-// 			}
-
-// 		case q := <-r.queryChannel:
-// 			s, ok := r.userMap[q.Name]
-// 			q.sendback <- (ok &&
-// 				bytes.Equal(s.token, q.Token) &&
-// 				time.Now().Before(s.expiration))
-// 		}
-// 	}
-// }
 
 // Validate returns true if the username matches the registered token
 // and its expiration time has not yet passed.  Otherwise, Validate()
@@ -173,45 +135,6 @@ func (r *Registrar) GenerateInfo() *Info {
 	}
 	return info
 }
-
-// --------------------------------------------------------------------
-
-// var soloReg = newRegistrar()
-
-// func init() {
-// 	go soloReg.run()
-// }
-
-// func Add(session UserSession) {
-// 	soloReg.add(session)
-// }
-
-// func Validate(user User) bool {
-// 	return soloReg.validate(user)
-// }
-
-// UserTimeBomb creates a ticker countdown that will eventually
-// trigger a deletion of the player.  This time cannot be reset,
-// because its intended use is for removing old session tokens from
-// the registrar.
-//
-// When UserTimeBomb is called, a new goroutine is launched, and
-// UserTimeBomb returns immediately after.  The goroutine sleeps for
-// the specified amount of time, and then sends a "delete user with
-// <id>" message to the registrar.  Thus, UserTimeBomb is safe for
-// concurrent use: because its underlying mechanism is also safe for
-// concurrent use.
-//
-// Note:
-//
-// There is probably no need to call this function, because the
-// registrar will periodically clear itself of old entries.
-
-// func UserTimeBomb(name string, timeout time.Duration) {
-// 	go soloReg.userTimeBomb(name, timeout)
-// }
-
-// --------------------------------------------------------------------
 
 // HandleInfo returns a webpage with information about the currently
 // active sesions
