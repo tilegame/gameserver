@@ -81,11 +81,13 @@ var (
 	index          string
 )
 
+var cookieServer = cookiez.NewCookieServer()
+
 var endpoints = map[string]func(http.ResponseWriter, *http.Request){
 	"/ws":       serveWebSocket,
 	"/ws/echo":  serveWebSocketEcho,
-	"/cookie":   cookiez.ServeCookies,
-	"/sessions": cookiez.HandleInfo,
+	"/cookie":   cookieServer.ServeCookies,
+	"/sessions": cookieServer.HandleInfo,
 }
 
 var endpointDescriptions = map[string]string{
@@ -170,6 +172,7 @@ func runServer() {
 	}
 	if !usingTLS {
 		s := &http.Server{Addr: addr, Handler: mux}
+		cookieServer.SetCookieSecurity(false)
 		log.Println("started server on:", s.Addr)
 		log.Fatal(s.ListenAndServe())
 	}
