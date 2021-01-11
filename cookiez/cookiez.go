@@ -169,7 +169,7 @@ func (c *cookieServer) deleteCookie(w http.ResponseWriter, r *http.Request) {
 // determines if the client already has the main authentication cookie.  The
 // http.ResponseWriter and http.Request are handed off to the cookie handlers in
 // package cookiez.  Either a new cookie will be given, or an old cookie will be
-// validated.f
+// validated.
 func (c *cookieServer) ServeCookies(w http.ResponseWriter, r *http.Request) {
 	c.readCookieHandler(w, r)
 }
