@@ -39,10 +39,6 @@ Token:    %x
 TimeLeft: %s
 `
 
-const invalidString = `
-
-`
-
 type cookieServer struct {
 	reg                 *registrar.Registrar
 	gorillaSecureCookie *securecookie.SecureCookie
