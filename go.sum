@@ -1,7 +1,5 @@
 github.com/fractalbach/fractalnet v0.0.0-20180903105958-adc953aff8bb h1:V7ZE/qEZTkjpxusKlhOfozLlyibpvRhftPfBXrZ33QA=
 github.com/fractalbach/fractalnet v0.0.0-20180903105958-adc953aff8bb/go.mod h1:p11lH02t0S86x/0i0mOo51LMO38F8bg0Rq6JpZqj3O0=
-github.com/fractalbach/highscores v0.0.0-20190127040914-c998dd20f363 h1:+v8J9N7ACf6PPlThoeXgMLQ3U2bvTixa0HIfr8dVfAg=
-github.com/fractalbach/highscores v0.0.0-20190127040914-c998dd20f363/go.mod h1:i+LvtFJ8btZFtq1kL/oIEsEW4FumHAq2Q0viluF9+Yk=
 github.com/gorilla/securecookie v1.1.1 h1:miw7JPhV+b/lAHSXz4qd/nN9jRiAFV5FwjeKyCS8BvQ=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
