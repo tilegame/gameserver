@@ -187,7 +187,7 @@ func runServerOverPlainHTTP(mux *http.ServeMux) {
 func runServerOverTLS(mux *http.ServeMux) {
 	m := &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist("thebachend.com"),
+		HostPolicy: autocert.HostWhitelist("tilegame.thebachend.com"),
 		Cache:      autocert.DirCache("certs"),
 	}
 	go http.ListenAndServe(":http", m.HTTPHandler(nil))
